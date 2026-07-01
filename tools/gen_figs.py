@@ -64,18 +64,32 @@ def main():
     # also equal blend if present in metrics
     best_single = max([m for m in models if not m.startswith("ensemble")], key=lambda m: stats[m][0])
 
-    # ---- fig1: headline IC + IR bars vs baseline ----
+    # ---- fig1: headline IC + IR bars. The Ensemble and Transformer bars show the
+    #      FURTHER-PROCESSED (v2) models (diversity weighting + group-g neutralization),
+    #      so the IR panel reflects the post-processing; the ML bars stay raw baselines. ----
+    F1 = ["ridge", "elasticnet", "lightgbm_dart", "lightgbm_huber", "lightgbm_l1",
+          "mlp", "ensemble_v2", "transformer_v2"]
+    F1 = [m for m in F1 if m in M]
+    f1nm = {**NAMES, "ensemble_v2": "Ensemble*", "transformer_v2": "Transformer*"}
+    f1col = {**C, "ensemble_v2": C["ensemble_opt"], "transformer_v2": C["transformer"]}
+    f1st = {}
+    for m in F1:
+        ic = daily_ic_series(M[m], "test")
+        f1st[m] = (ic.mean(), ic.mean() / ic.std() if ic.std() > 0 else 0)
     fig, ax = plt.subplots(1, 2, figsize=(11, 4.2))
-    xs = range(len(models)); cols = [C.get(m, "#888") for m in models]
-    ax[0].bar(xs, [stats[m][0] for m in models], color=cols)
-    ax[0].axhline(BASE_IC, ls="--", color=C["thresh"], lw=1.4, label=f"y_hat0 baseline ({BASE_IC})")
-    ax[0].set_xticks(list(xs)); ax[0].set_xticklabels([NAMES[m] for m in models], rotation=35, ha="right", fontsize=9)
+    xs = range(len(F1)); cols = [f1col.get(m, "#888") for m in F1]
+    ax[0].bar(xs, [f1st[m][0] for m in F1], color=cols)
+    ax[0].axhline(BASE_IC, ls="--", color=C["thresh"], lw=1.4, label=f"baseline IC ({BASE_IC})")
+    ax[0].set_xticks(list(xs)); ax[0].set_xticklabels([f1nm[m] for m in F1], rotation=35, ha="right", fontsize=9)
     ax[0].set_title("Test mean daily IC (days 881–1259)"); ax[0].legend(fontsize=9)
-    for i, m in enumerate(models): ax[0].text(i, stats[m][0] + 0.0005, f"{stats[m][0]:.4f}", ha="center", fontsize=7.5)
-    ax[1].bar(xs, [stats[m][1] for m in models], color=cols)
+    for i, m in enumerate(F1): ax[0].text(i, f1st[m][0] + 0.0005, f"{f1st[m][0]:.4f}", ha="center", fontsize=7.5)
+    ax[1].bar(xs, [f1st[m][1] for m in F1], color=cols)
     ax[1].axhline(BASE_IR, ls="--", color=C["thresh"], lw=1.4, label=f"baseline IR ({BASE_IR})")
-    ax[1].set_xticks(list(xs)); ax[1].set_xticklabels([NAMES[m] for m in models], rotation=35, ha="right", fontsize=9)
+    ax[1].set_xticks(list(xs)); ax[1].set_xticklabels([f1nm[m] for m in F1], rotation=35, ha="right", fontsize=9)
     ax[1].set_title("Test IC information ratio (mean/std)"); ax[1].legend(fontsize=9)
+    for i, m in enumerate(F1): ax[1].text(i, f1st[m][1] + 0.012, f"{f1st[m][1]:.2f}", ha="center", fontsize=7.5)
+    fig.text(0.5, -0.02, "* Ensemble / Transformer = further-processed final models (diversity weighting + group-g neutralization); the ML bars are raw baselines.",
+             ha="center", fontsize=7.4, color="#6b7280")
     save(fig, "fig1_headline.png")
 
     # ---- fig2: daily IC time series for ensemble ----

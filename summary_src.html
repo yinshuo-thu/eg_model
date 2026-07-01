@@ -111,7 +111,7 @@
   <div class="wrap">
     <h1><span class="zh">eg-model：从 Ridge / LightGBM / MLP 基线到 Ensemble 与时序 Transformer</span><span class="en">eg-model: From Ridge / LightGBM / MLP Baselines to an Ensemble and a Temporal Transformer</span></h1>
     <div class="sub"><span class="zh">202606 Engineering Gates Take Home Project</span><span class="en">202606 Engineering Gates Take Home Project</span></div>
-    <div class="meta"><b>Shuo Yin（尹硕）</b> &nbsp;·&nbsp; <a href="mailto:yins25@mails.tsinghua.edu.cn">yins25@mails.tsinghua.edu.cn</a> &nbsp;·&nbsp; <a href="https://autoalpha.cn/eg_model/">report online ↗</a></div>
+    <div class="meta"><b>Shuo Yin（尹硕）</b> &nbsp;·&nbsp; <a href="mailto:yins25@mails.tsinghua.edu.cn">yins25@mails.tsinghua.edu.cn</a> &nbsp;·&nbsp; <a href="https://autoalpha.cn/eg_model/">report online ↗</a> &nbsp;·&nbsp; <a href="https://github.com/yinshuo-thu/eg_model" title="code + submit package on GitHub"><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" style="vertical-align:-2px" aria-label="GitHub"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.6 7.6 0 018 4.6c.68 0 1.36.09 2 .27 1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> GitHub ↗</a></div>
   </div>
 </header>
 
@@ -170,13 +170,13 @@
 
   <div class="cards">
     <div class="card"><div class="k">0.056</div><div class="l"><span class="zh">基线 y_hat0 · IC</span><span class="en">Baseline y_hat0 · IC</span></div></div>
-    <div class="card accent"><div class="k">0.0602</div><div class="l"><span class="zh"><b>Transformer</b> · 测试 IC · IR 0.907</span><span class="en"><b>Transformer</b> · test IC · IR 0.907</span></div></div>
-    <div class="card gold"><div class="k">0.0605</div><div class="l"><span class="zh"><b>Ensemble</b> · 测试 IC · IR 1.135</span><span class="en"><b>Ensemble</b> · test IC · IR 1.135</span></div></div>
+    <div class="card accent"><div class="k">0.0590</div><div class="l"><span class="zh"><b>Transformer</b>（处理后）· 测试 IC · IR 1.10</span><span class="en"><b>Transformer</b> (processed) · test IC · IR 1.10</span></div></div>
+    <div class="card gold"><div class="k">0.0605</div><div class="l"><span class="zh"><b>Ensemble</b>（处理后）· 测试 IC · IR 1.135</span><span class="en"><b>Ensemble</b> (processed) · test IC · IR 1.135</span></div></div>
   </div>
 
   <figure>
     <img src="summary_assets/fig1_headline.png" alt="cross-model comparison">
-    <figcaption><span class="zh"><b>图 0.1 跨模型对比（测试期 days 881–1259）。</b>左：逐日截面 Pearson IC（虚线为基线 0.056）；右：IC 信息比 IR（虚线为基线 1.1）。Transformer 是最强单模型，Ensemble 进一步抬升 IC。</span><span class="en"><b>Fig 0.1 — Cross-model comparison (test, days 881–1259).</b> Left: mean daily cross-sectional Pearson IC (dashed = baseline 0.056); right: IC information ratio (dashed = baseline 1.1). The Transformer is the strongest single model; the Ensemble lifts IC further.</span></figcaption>
+    <figcaption><span class="zh"><b>图 0.1 跨模型对比（测试期 days 881–1259）。</b>左：逐日截面 Pearson IC（虚线为基线 0.056）；右：IC 信息比 IR（虚线为基线 1.1）。最后两支 <b>Ensemble* / Transformer*</b> 为经<b>进一步处理</b>（多样性加权 + group 中性化）的最终模型——IR 分别抬到 <b>1.13 / 1.10</b>、双双跨过基线 1.1，同时 IC 维持（Ensemble 更升到 0.0605）；其余为原始基线（ML 单模型 IR 均低于 1.1）。</span><span class="en"><b>Fig 0.1 — Cross-model comparison (test, days 881–1259).</b> Left: mean daily cross-sectional Pearson IC (dashed = baseline 0.056); right: IC information ratio (dashed = baseline 1.1). The last two bars — <b>Ensemble* / Transformer*</b> — are the <b>further-processed</b> final models (diversity weighting + group-neutralization): their IRs rise to <b>1.13 / 1.10</b>, both crossing the 1.1 baseline while IC holds (the Ensemble even lifts to 0.0605); the rest are raw baselines (all ML singles sit below IR 1.1).</span></figcaption>
   </figure>
 </section>
 
