@@ -1,0 +1,28 @@
+# ---- large data / derived artifacts (regenerable; not for git) ----
+artifacts/features.parquet
+artifacts/panel_raw.parquet
+artifacts/preds/*.parquet
+artifacts/preds/*.npy
+# raw data (per NDA, never committed)
+data.csv
+*.csv.gz
+
+# ---- model checkpoints (large binaries) ----
+Transformer/weights/
+**/weights/*.pt
+**/weights/*.pth
+**/*.ckpt
+
+# ---- python / misc ----
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+*.bak
+*.bak_*
+index.html.bak_*
+.DS_Store
+
+# NOTE: kept in git — all code (scripts/tools), configs, metrics CSVs,
+# artifacts/notes, feature_list.json, summary_src.html, summary.html,
+# summary_assets/ (report figures), report/, README.

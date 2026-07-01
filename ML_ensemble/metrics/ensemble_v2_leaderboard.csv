@@ -1,0 +1,23 @@
+model,valid_IC,valid_IR,test_IC,test_IR,detail
+ref_equal3 (baseline-style),0.06542,0.956,0.06021,0.931,"equal ['lightgbm', 'mlp', 'transformer']"
+div3 (3-family diversity),0.06477,0.954,0.06044,0.944,"w={'lightgbm': 0.451, 'mlp': 0.172, 'transformer': 0.378}"
+divN (member diversity),0.06464,1.007,0.0606,1.025,"w={'lightgbm_dart': 0.479, 'lightgbm_huber': 0.0, 'lightgbm_l1': 0.0, 'mlp': 0.162, 'transformer': 0.358}"
+divN+neutG(a=0.0),0.06464,1.007,0.0606,1.025,alpha-scan
+divN+neutG(a=0.05),0.06478,1.026,0.06062,1.041,alpha-scan
+divN+neutG(a=0.1),0.06491,1.046,0.06063,1.056,alpha-scan
+divN+neutG(a=0.15),0.06503,1.066,0.06063,1.072,alpha-scan
+divN+neutG(a=0.2),0.06514,1.086,0.06062,1.087,alpha-scan
+divN+neutG(a=0.25),0.06524,1.107,0.06059,1.103,alpha-scan
+divN+neutG(a=0.3),0.06533,1.128,0.06055,1.119,alpha-scan
+divN+neutG(a=0.35),0.0654,1.149,0.0605,1.135,alpha-scan  <-- SELECTED
+divN+neutG(a=0.4),0.06546,1.171,0.06044,1.15,alpha-scan
+divN+neutG(a=0.45),0.0655,1.193,0.06036,1.166,alpha-scan
+divN+neutG(a=0.5),0.06553,1.214,0.06027,1.181,alpha-scan
+divN+neutG(a=0.55),0.06555,1.236,0.06016,1.196,alpha-scan
+divN+neutG(a=0.6),0.06555,1.257,0.06004,1.21,alpha-scan
+divN+neutG(a=0.65),0.06553,1.278,0.05991,1.224,alpha-scan
+divN+neutG(a=0.7),0.06551,1.298,0.05976,1.237,alpha-scan
+divN+neutG(a=0.75),0.06546,1.317,0.0596,1.249,alpha-scan
+divN+neutG(a=0.8),0.06541,1.336,0.05943,1.261,alpha-scan
+divN+neutG(a=0.85),0.06533,1.353,0.05924,1.271,alpha-scan
+FINAL ensemble_v2 (divN+neutG),0.0654,1.149,0.0605,1.135,"alpha=0.35  members=['lightgbm_dart', 'lightgbm_huber', 'lightgbm_l1', 'mlp', 'transformer']  w={'lightgbm_dart': 0.479, 'lightgbm_huber': 0.0, 'lightgbm_l1': 0.0, 'mlp': 0.162, 'transformer': 0.358}"

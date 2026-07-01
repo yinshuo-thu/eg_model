@@ -1,0 +1,18 @@
+[ens-chain] all preds ready 12:10:46; running ensemble
+[ens] base models: ['elasticnet', 'lightgbm_dart', 'lightgbm_huber', 'lightgbm_l1', 'mlp', 'ridge', 'transformer']
+[ens] aligned rows: 665,165
+                     IC              IR       
+split              test    valid   test  valid
+model                                         
+elasticnet      0.04114  0.03259  0.608  0.470
+lightgbm_dart   0.04778  0.04746  0.862  0.722
+lightgbm_huber  0.04715  0.04810  0.709  0.635
+lightgbm_l1     0.04745  0.04955  0.738  0.696
+mlp             0.04883  0.05712  0.752  0.822
+ridge           0.03991  0.03226  0.578  0.474
+transformer     0.05060  0.05020  0.757  0.751
+[ens] opt valid IC 0.05752  weights elasticnet:0.00, lightgbm_dart:0.15, lightgbm_huber:0.00, lightgbm_l1:0.03, mlp:0.82, ridge:0.00, transformer:0.00
+  ensemble_equal   valid IC 0.04923 IR 0.70 | test IC 0.05018 IR 0.77
+  ensemble_opt     valid IC 0.05752 IR 0.83 | test IC 0.05051 IR 0.80
+[ens] saved ensemble_final + weights
+[ens-chain] DONE 12:14:30

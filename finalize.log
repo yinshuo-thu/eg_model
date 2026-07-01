@@ -1,0 +1,35 @@
+[final] transformer8 done 12:40:52
+[ens] models: ['ridge', 'elasticnet', 'lightgbm_l1', 'lightgbm_huber', 'transformer', 'mlp', 'lightgbm_dart']  aligned rows: 665,165
+         model  valid_IC  valid_IR  test_IC  test_IR
+         ridge   0.03634     0.506  0.04163    0.568
+    elasticnet   0.03708     0.506  0.04301    0.599
+ lightgbm_dart   0.05774     0.965  0.05499    1.051
+   lightgbm_l1   0.05910     0.882  0.05521    0.888
+lightgbm_huber   0.05835     0.824  0.05537    0.869
+      lightgbm   0.05912     0.901  0.05589    0.953
+           mlp   0.06495     0.941  0.05647    0.866
+   transformer   0.06271     0.911  0.05906    0.846
+
+[ens] family corr (test):
+              lightgbm    mlp  transformer
+lightgbm        1.000  0.829        0.794
+mlp             0.829  1.000        0.921
+transformer     0.794  0.921        1.000
+  ensemble_equal   valid IC 0.06542 IR 0.96 | test IC 0.06021 IR 0.93 spear 0.06082  w={'lightgbm': 0.333, 'mlp': 0.333, 'transformer': 0.333}
+  ensemble_opt     valid IC 0.06572 IR 0.95 | test IC 0.05927 IR 0.91 spear 0.05946  w={'lightgbm': 0.196, 'mlp': 0.572, 'transformer': 0.232}
+[ens] saved ensemble_final (equal-weight blend)
+wrote fig1_headline.png
+wrote fig2_daily_ic.png
+wrote fig3_cumic.png
+wrote fig4_bucket.png
+wrote fig5_modelcorr.png
+wrote fig6_lift.png
+baseline 0.056 | best single transformer 0.05906 | ensemble 0.06021
+[final] DONE 12:42:47
+--- transformer ---
+model,valid_IC,valid_IR,valid_spear,valid_pos,test_IC,test_IR,test_spear,test_pos
+transformer,0.06271,0.911,0.05389,0.817,0.05906,0.846,0.05762,0.805
+--- ensemble ---
+model,weights,valid_IC,valid_IR,valid_spear,test_IC,test_IR,test_spear
+ensemble_equal,"{'lightgbm': 0.333, 'mlp': 0.333, 'transformer': 0.333}",0.06542,0.956,0.0604,0.06021,0.931,0.06082
+ensemble_opt,"{'lightgbm': 0.196, 'mlp': 0.572, 'transformer': 0.232}",0.06572,0.954,0.0607,0.05927,0.909,0.05946

@@ -1,0 +1,4 @@
+model,valid_IC,valid_IR,valid_spear,valid_pos,test_IC,test_IR,test_spear,test_pos
+lgb_dart_neutral_v2,0.05975,1.293,0.06121,0.875,0.05401,1.207,0.05963,0.9
+lgb_tuned_v2,0.06088,0.91,0.05998,0.825,0.05601,0.907,0.05986,0.823
+lgb_tuned_v2_neutral,0.06249,1.219,0.06282,0.875,0.05583,1.128,0.05997,0.873

@@ -1,0 +1,3 @@
+model,weights,valid_IC,valid_IR,valid_spear,test_IC,test_IR,test_spear
+ensemble_equal,"{'lightgbm': 0.333, 'mlp': 0.333, 'transformer': 0.333}",0.06542,0.956,0.0604,0.06021,0.931,0.06082
+ensemble_opt,"{'lightgbm': 0.196, 'mlp': 0.572, 'transformer': 0.232}",0.06572,0.954,0.0607,0.05927,0.909,0.05946

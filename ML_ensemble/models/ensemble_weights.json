@@ -1,0 +1,22 @@
+{
+  "families": [
+    "lightgbm",
+    "mlp",
+    "transformer"
+  ],
+  "w_equal": [
+    0.3333333333333333,
+    0.3333333333333333,
+    0.3333333333333333
+  ],
+  "w_opt": [
+    0.19634927782956002,
+    0.5715553693027107,
+    0.2320953528677293
+  ],
+  "lgb_variants": [
+    "lightgbm_l1",
+    "lightgbm_huber",
+    "lightgbm_dart"
+  ]
+}

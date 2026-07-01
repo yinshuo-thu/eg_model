@@ -1,0 +1,34 @@
+{
+  "ridge": {
+    "test_IC": 0.04163,
+    "test_IR": 0.568
+  },
+  "elasticnet": {
+    "test_IC": 0.04301,
+    "test_IR": 0.599
+  },
+  "lightgbm_dart": {
+    "test_IC": 0.05499,
+    "test_IR": 1.051
+  },
+  "lightgbm_huber": {
+    "test_IC": 0.05537,
+    "test_IR": 0.869
+  },
+  "lightgbm_l1": {
+    "test_IC": 0.05521,
+    "test_IR": 0.888
+  },
+  "transformer": {
+    "test_IC": 0.05906,
+    "test_IR": 0.846
+  },
+  "mlp": {
+    "test_IC": 0.05647,
+    "test_IR": 0.866
+  },
+  "ensemble_opt": {
+    "test_IC": 0.06021,
+    "test_IR": 0.931
+  }
+}

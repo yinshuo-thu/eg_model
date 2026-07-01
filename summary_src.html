@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eg-model · Ridge/LightGBM/MLP → Ensemble → Transformer · Shuo Yin</title>
+<style>
+  :root{
+    --ink:#1f2937; --ink2:#374151; --muted:#6b7280; --line:#e5e7eb;
+    --bg:#ffffff; --soft:#f8fafc; --soft2:#f1f5f9;
+    --brand:#0f3d6e; --brand2:#0ea5e9; --accent:#dc2626; --gold:#b45309;
+    --maxw:1060px;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Songti SC","Noto Serif CJK SC",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,"Courier New",monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--bg);line-height:1.72;font-size:16.5px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+  body.lang-zh .en{display:none}
+  body.lang-en .zh{display:none}
+  span.en,span.zh{display:inline}
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.93);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:52px}
+  .topbar .ttl{font-weight:700;font-size:14.5px;color:var(--brand)}
+  .toggle{display:flex;border:1px solid var(--brand);border-radius:999px;overflow:hidden;font-size:13px}
+  .toggle button{border:0;background:#fff;color:var(--brand);padding:5px 14px;cursor:pointer;font-weight:600;font-family:inherit}
+  .toggle button.active{background:var(--brand);color:#fff}
+  header.doc{padding:40px 0 22px;border-bottom:1px solid var(--line)}
+  header.doc h1{font-family:var(--serif);font-weight:700;font-size:30px;line-height:1.25;margin:0 0 .3em;color:var(--ink)}
+  header.doc .sub{font-size:16px;color:var(--muted);max-width:780px}
+  header.doc .meta{margin-top:16px;font-size:14px;color:var(--ink2)}
+  header.doc .meta b{color:var(--ink)}
+  header.doc .meta a{color:var(--brand2)}
+  main{padding:30px 0 60px}
+  section{margin:0 0 44px;scroll-margin-top:64px}
+  h2{font-family:var(--serif);font-size:24px;color:var(--brand);border-bottom:2px solid var(--line);padding-bottom:7px;margin:8px 0 16px;display:flex;align-items:baseline;gap:11px}
+  h2 .num{font-size:14px;color:#fff;background:var(--brand);border-radius:6px;padding:2px 9px;font-family:var(--sans);font-weight:700}
+  h3{font-size:19px;color:var(--ink);margin:30px 0 8px;scroll-margin-top:64px;padding-top:6px;border-top:1px dashed var(--line)}
+  h3 .sn{color:var(--brand2);font-weight:700;margin-right:6px}
+  h4{font-size:16px;color:var(--brand);margin:20px 0 4px}
+  p{margin:.5em 0}
+  a{color:var(--brand2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  ul,ol{margin:.4em 0 .8em;padding-left:1.3em}
+  li{margin:.28em 0}
+  code{font-family:var(--mono);background:var(--soft2);padding:1px 5px;border-radius:4px;font-size:.88em;color:#0b3a66}
+  strong{color:var(--ink)}
+  nav.toc{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin:26px 0 30px}
+  nav.toc .h{font-weight:700;color:var(--brand);font-size:13px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+  nav.toc ol{columns:1;margin:0;padding-left:1.1em;font-size:14.5px}
+  nav.toc ol ol{font-size:13.5px;color:var(--muted);padding-left:1.1em;margin:.1em 0}
+  .tldr{border-left:4px solid var(--gold);background:#fffbeb;border-radius:0 10px 10px 0;padding:13px 18px;margin:18px 0}
+  .note{border-left:4px solid var(--brand2);background:#f0f9ff;border-radius:0 10px 10px 0;padding:12px 16px;margin:16px 0}
+  .why{border-left:4px solid var(--gold);background:#fffbeb;border-radius:0 10px 10px 0;padding:12px 16px;margin:16px 0}
+  .fail{border-left:4px solid #4b5563;background:#f3f4f6;border-radius:0 10px 10px 0;padding:12px 16px 9px;margin:16px 0;color:#4b5563}
+  .lab{font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:3px}
+  .tldr .lab,.why .lab{color:var(--gold)} .note .lab{color:var(--brand2)} .fail .lab{color:#374151}
+  .fail b{color:#1f2937} .fail .m{font-family:var(--mono);font-size:.82em;color:#475569;background:#e2e8f0;padding:0 5px;border-radius:3px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:18px 0}
+  .card{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:#fff}
+  .card .k{font-size:25px;font-weight:700;color:var(--brand);font-variant-numeric:tabular-nums;line-height:1.15}
+  .card .l{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .card.accent .k{color:var(--accent)} .card.gold .k{color:var(--gold)}
+  .tbl{overflow-x:auto;margin:16px 0}
+  table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+  th,td{padding:8px 11px;text-align:right;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  thead th{background:var(--soft2);color:var(--ink2);font-weight:700;border-bottom:2px solid #cbd5e1}
+  tbody tr:hover{background:var(--soft)}
+  tr.best td{background:#fff7ed;font-weight:700;color:var(--gold)}
+  tr.drop td{color:#9ca3af}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;font-weight:600}
+  .tag.ml{background:#ecfeff;color:#0e7490}
+  .tag.e2e{background:#fef2f2;color:#b91c1c}
+  figure{margin:22px 0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  figure img{width:100%;display:block}
+  figcaption{padding:10px 16px;font-size:13.5px;color:var(--muted);background:var(--soft);border-top:1px solid var(--line)}
+  figcaption b{color:var(--ink2)}
+  .road{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin:20px 0}
+  .road .step{flex:1 1 150px;min-width:150px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:linear-gradient(180deg,#fff,#f8fafc)}
+  .road .step .n{font-size:12px;font-weight:700;color:#fff;background:var(--brand2);border-radius:6px;padding:1px 8px}
+  .road .step.s5 .n{background:var(--accent)}
+  .road .step h5{margin:8px 0 4px;font-size:14.5px;color:var(--brand)}
+  .road .step p{margin:0;font-size:12.6px;color:var(--muted);line-height:1.5}
+  .road .arrow{align-self:center;color:#cbd5e1;font-size:22px;font-weight:700}
+  @media(max-width:720px){.road .arrow{display:none}}
+  .formula{font-family:var(--mono);background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:14px;color:#0b3a66;overflow-x:auto}
+  .small{font-size:13px;color:var(--muted)}
+  .kbd{font-family:var(--mono);font-size:12.5px;background:#0b2545;color:#cfe6ff;padding:10px 14px;border-radius:8px;display:block;white-space:pre;overflow-x:auto;margin:12px 0}
+  footer{border-top:1px solid var(--line);padding:22px 0 40px;margin-top:30px;color:var(--muted);font-size:14px}
+  .ref{font-size:13.5px;color:var(--ink2)}
+  .ref li{margin:.34em 0}
+  sup.r{color:var(--brand2);font-weight:700;font-size:.78em}
+</style>
+</head>
+<body class="lang-en">
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="ttl">eg-model</div>
+    <div class="toggle" role="group" aria-label="language">
+      <button id="btn-zh" onclick="setLang('zh')">中文</button>
+      <button id="btn-en" class="active" onclick="setLang('en')">English</button>
+    </div>
+  </div>
+</div>
+
+<header class="doc">
+  <div class="wrap">
+    <h1><span class="zh">eg-model：从 Ridge / LightGBM / MLP 基线到 Ensemble 与时序 Transformer</span><span class="en">eg-model: From Ridge / LightGBM / MLP Baselines to an Ensemble and a Temporal Transformer</span></h1>
+    <div class="sub"><span class="zh">202606 Engineering Gates Take Home Project</span><span class="en">202606 Engineering Gates Take Home Project</span></div>
+    <div class="meta"><b>Shuo Yin（尹硕）</b> &nbsp;·&nbsp; <a href="mailto:yins25@mails.tsinghua.edu.cn">yins25@mails.tsinghua.edu.cn</a> &nbsp;·&nbsp; <a href="https://autoalpha.cn/eg_model/">report online ↗</a></div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<nav class="toc">
+  <div class="h">Contents</div>
+  <ol>
+    <li><a href="#abstract">Abstract</a></li>
+    <li><a href="#intro">Task 1 — Problem &amp; Data</a>
+      <ol>
+        <li><a href="#challenge">1.1 The Take-Home Task</a></li>
+        <li><a href="#roadmap">1.2 Methodology Roadmap</a></li>
+        <li><a href="#data">1.3 Data &amp; Feature Engineering</a></li>
+      </ol>
+    </li>
+    <li><a href="#baselines">ML Baselines &amp; Ensemble</a>
+      <ol>
+        <li><a href="#ml">2.1 Ridge / ElasticNet / LightGBM / MLP</a></li>
+        <li><a href="#ensemble">2.2 Ensemble Model</a></li>
+      </ol>
+    </li>
+    <li><a href="#xfmr">Temporal Transformer</a>
+      <ol>
+        <li><a href="#arch">3.1 Architecture</a></li>
+        <li><a href="#takeaways">3.2 Valuable Takeaways</a></li>
+        <li><a href="#v2round">3.2b Optimization Round (v2)</a></li>
+        <li><a href="#results">3.3 Results &amp; Visualizations</a></li>
+      </ol>
+    </li>
+    <li><a href="#analysis">Analysis &amp; Conclusion</a>
+      <ol>
+        <li><a href="#leakage">4.1 No-Leakage &amp; Validation</a></li>
+        <li><a href="#conclusion">4.2 Conclusion &amp; Future Work</a></li>
+      </ol>
+    </li>
+    <li><a href="#task2">Task 2 — Order-Book &amp; Tick Signals</a>
+      <ol>
+        <li><a href="#t2-taxonomy">5.1 A taxonomy: state / flow / intensity / toxicity</a></li>
+        <li><a href="#t2-pipe">5.2 From ticks to features: the engineering pipeline</a></li>
+        <li><a href="#t2-valid">5.3 Practical concerns &amp; validation</a></li>
+      </ol>
+    </li>
+  </ol>
+    </li>
+  </ol>
+</nav>
+
+<!-- ============================ ABSTRACT ============================ -->
+<section id="abstract">
+  <h2><span class="num">0</span>Abstract</h2>
+  <div class="tldr">
+    <span class="lab">TL;DR</span>
+    <span class="zh">在弱信号的截面面板上预测前向收益 <code>y</code>。以 86 个原始因子 + 自建 <b>213 个防泄漏因子</b>（逐日截面 z-score、时序滞后/动量、group 聚合、截面 PCA 去噪）为输入，建立 Ridge / ElasticNet / LightGBM / MLP 基线，并训练一个<b>日频时序 Transformer</b>。评测口径与官方一致——<b>逐日截面 Pearson IC</b>（测试期 days 881–1259，正是基线 y_hat0 的评估窗口）。最强单模型为 Transformer <b>0.0591</b>；三族稳健等权 <b>Ensemble 0.0602</b>（Spearman 0.0608），相对官方基线 <code>y_hat0</code>（IC 0.056）<b>主指标 +7.5%、rank IC +8.7%</b>。第二题（盘口/逐笔信号）的完整答卷见 §5。</span>
+    <span class="en">Predict a weak forward return <code>y</code> on a cross-sectional panel. From the 86 raw factors plus <b>213 self-built leak-free features</b> (per-day cross-sectional z-score, temporal lags/momentum, group aggregates, cross-sectional PCA denoising), I build Ridge / ElasticNet / LightGBM / MLP baselines and train a <b>daily temporal Transformer</b>. Scoring follows the brief exactly — the <b>mean daily cross-sectional Pearson IC</b> (test = days 881–1259, the baseline's own eval window). The best single model is the Transformer at <b>0.0591</b>; the robust three-family equal-weight <b>Ensemble reaches 0.0602</b> (Spearman 0.0608), beating the provided <code>y_hat0</code> baseline (IC 0.056) by <b>+7.5% on the primary metric and +8.7% on rank IC</b>. The full Task-2 answer (order-book / tick signals) is in §5.</span>
+  </div>
+
+  <div class="cards">
+    <div class="card"><div class="k">0.056</div><div class="l"><span class="zh">基线 y_hat0 · IC</span><span class="en">Baseline y_hat0 · IC</span></div></div>
+    <div class="card accent"><div class="k">0.0591</div><div class="l"><span class="zh"><b>Transformer</b> · 测试 IC</span><span class="en"><b>Transformer</b> · test IC</span></div></div>
+    <div class="card gold"><div class="k">0.0602</div><div class="l"><span class="zh"><b>Ensemble</b> · 测试 IC</span><span class="en"><b>Ensemble</b> · test IC</span></div></div>
+  </div>
+
+  <figure>
+    <img src="summary_assets/fig1_headline.png" alt="cross-model comparison">
+    <figcaption><span class="zh"><b>图 0.1 跨模型对比（测试期 days 881–1259）。</b>左：逐日截面 Pearson IC（虚线为基线 0.056）；右：IC 信息比 IR（虚线为基线 1.1）。Transformer 是最强单模型，Ensemble 进一步抬升 IC。</span><span class="en"><b>Fig 0.1 — Cross-model comparison (test, days 881–1259).</b> Left: mean daily cross-sectional Pearson IC (dashed = baseline 0.056); right: IC information ratio (dashed = baseline 1.1). The Transformer is the strongest single model; the Ensemble lifts IC further.</span></figcaption>
+  </figure>
+</section>
+
+<!-- ============================ SECTION 1 ============================ -->
+<section id="intro">
+  <h2><span class="num">1</span>Task 1 — Problem &amp; Data</h2>
+
+  <h3 id="challenge"><span class="sn">1.1</span>The Take-Home Task</h3>
+  <p><span class="zh">给定一个按 <code>day</code>（1–1259，时间有序）组织的<b>截面面板</b>：每行一个 <code>instrument_id</code>，含 86 个匿名因子 <code>x_0…x_85</code>、5 个价格列 <code>prc1…prc5</code>、成交量 <code>vol0</code>、组别 <code>g</code>（约 74 组，<code>g=-1</code> 为未分类）、以及目标 <code>y</code>（前向、均值≈0 的收益）。目标是产出 <code>y_hat</code> 去<b>超越官方基线 y_hat0</b>。信号<b>极弱</b>（单因子 IC 量级 0.01–0.04），重点是稳健、可泛化，而非过拟合。</span><span class="en">A <b>cross-sectional panel</b> indexed by <code>day</code> (1–1259, time-ordered): each row is an <code>instrument_id</code> with 86 anonymous factors <code>x_0…x_85</code>, five price columns <code>prc1…prc5</code>, a volume <code>vol0</code>, a group id <code>g</code> (≈74 groups, <code>g=-1</code> unclassified), and the target <code>y</code> (a forward, mean-≈0 return). The goal is a <code>y_hat</code> that <b>beats the provided y_hat0</b>. Signal is <b>genuinely weak</b> (single-factor IC ≈ 0.01–0.04), so robustness and generalisation matter far more than in-sample fit.</span></p>
+  <div class="note"><span class="lab">Objective &amp; baseline</span><span class="zh">评分 = <b>逐日</b>截面相关的均值 <code>score = mean_d corr(y_hat[d], y[d])</code>，主指标 <b>Pearson IC</b>、次指标 Spearman；同时看 IC 的 mean/std（IR）。官方 <code>y_hat0</code> 在验证期 days 881–1259 上 <b>IC 0.056、IR 1.1</b>——这正是我用作测试集的窗口。</span><span class="en">Score = mean of the <b>per-day</b> cross-sectional correlation <code>score = mean_d corr(y_hat[d], y[d])</code>, primary <b>Pearson IC</b>, secondary Spearman, with the mean/std of daily IC (IR) as a stability check. The provided <code>y_hat0</code> scores <b>IC 0.056, IR 1.1</b> on days 881–1259 — the very window I hold out as test.</span></div>
+
+  <h3 id="roadmap"><span class="sn">1.2</span>Methodology Roadmap</h3>
+  <div class="road">
+    <div class="step"><span class="n">1</span><h5>Leak-free features</h5><p>86 raw x + 213 engineered: CS z-score, temporal lags/momentum, group aggregates, CS-PCA denoising.</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="n">2</span><h5>ML base models</h5><p>Ridge / ElasticNet (linear), LightGBM (robust L1/Huber/DART, seed-bag), multi-task MLP.</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="n">3</span><h5>Ensemble</h5><p>Per-day z-score each family; robust equal-weight blend of the diverse {LightGBM, MLP, Transformer}.</p></div>
+    <div class="arrow">→</div>
+    <div class="step s5"><span class="n">4</span><h5>Temporal Transformer</h5><p>Per-instrument day-sequences; v3-lineage (conv stem, time-bias attention, dual readout, multitask).</p></div>
+  </div>
+  <p class="small"><span class="zh">所有改动都在统一的<b>前向时序</b>协议下检验：train days 1–760、valid 761–880（选型/早停）、test 881–1259（只看一次）。</span><span class="en">Every choice is tested under one <b>forward-in-time</b> protocol: train days 1–760, valid 761–880 (selection / early-stop), test 881–1259 (looked at once).</span></p>
+
+  <h3 id="data"><span class="sn">1.3</span>Data &amp; Feature Engineering</h3>
+  <p><span class="zh">面板近乎<b>满秩</b>：1,333 个 instrument × 1,259 天 ≈ 1.68M 行，几乎每天每只都在——这让<b>逐 instrument 的时序序列</b>很干净（Transformer 的基础）。缺失集中在少数 x 列（&lt;1% 单元），由截面 z-score 顺带填 0。围绕"<b>评分是逐日截面 IC</b>"这一事实，特征工程的主力是<b>逐日截面 z-score</b>：</span><span class="en">The panel is nearly <b>rectangular</b>: 1,333 instruments × 1,259 days ≈ 1.68M rows, almost every instrument on every day — which makes clean <b>per-instrument temporal sequences</b> possible (the Transformer's basis). Missingness is concentrated in a few x columns (&lt;1% of cells) and absorbed by the cross-sectional z-score (NaN→0). Because <b>scoring is a per-day cross-sectional IC</b>, the workhorse transform is the <b>per-day cross-sectional z-score</b>:</span></p>
+  <ul>
+    <li><b><span class="zh">截面 z-score（86）</span><span class="en">Cross-sectional z-score (86)</span></b> — <span class="zh">每个 <code>x_i</code> 在<b>当日横截面</b>内去均值除标准差、截断 ±6。去除日内 level/scale（IC 本就不变），是最关键的去噪。</span><span class="en">each <code>x_i</code> de-meaned / scaled within <b>that day's cross-section</b>, clipped ±6. Removes per-day level/scale (which IC ignores anyway) — the single most important denoiser.</span></li>
+    <li><b><span class="zh">时序特征</span><span class="en">Temporal (per instrument)</span></b> — <span class="zh"><code>y</code> 的滞后/滚动均值/滚动波动/EWMA，最强 30 个 x 的 lag1 / 5 日动量 / 10 日均值——全部 <code>shift()≥0</code>，再做截面 z。</span><span class="en"><code>y</code> lags / rolling means / rolling vol / EWMA, plus lag1 / 5-day momentum / 10-day mean of the strongest 30 x's — all <code>shift()≥0</code>, then cross-sectionally z-scored.</span></li>
+    <li><b><span class="zh">价/量 + group</span><span class="en">Price/Vol + group</span></b> — <span class="zh"><code>prc1…5</code> 压成 mean/std/range/spread/skew、动量；<code>vol0</code> 变化；group 的<b>滞后组收益</b>与<b>扩张窗 target-encoding</b>（截至前一日，无泄漏）。</span><span class="en"><code>prc1…5</code> collapsed to mean/std/range/spread/skew &amp; momentum; <code>vol0</code> changes; group's <b>lagged group return</b> and <b>expanding-window target encoding</b> (up to the previous day, leak-free).</span></li>
+    <li><b><span class="zh">截面 PCA 去噪（12）</span><span class="en">Cross-sectional PCA (12)</span></b> — <span class="zh">在训练期截面上拟合 PCA，取前 12 主成分作为<b>共同因子</b>，压制特异噪声。</span><span class="en">PCA fit on the train cross-section; the top-12 components are <b>common factors</b> that suppress idiosyncratic noise.</span></li>
+  </ul>
+  <div class="why"><span class="lab">Why nonlinear wins</span><span class="zh">线性模型（Ridge/ElasticNet）在任何特征子集、任何正则下都卡在 <b>IC≈0.042</b>——说明可榨取的信号是<b>非线性/交互</b>的，需要树模型与神经网络。这直接决定了下面的模型选择。</span><span class="en">Linear models (Ridge/ElasticNet) plateau at <b>IC≈0.042</b> under every feature subset and regulariser — the extractable signal is <b>nonlinear / interaction-based</b>, which is exactly why trees and neural nets are needed. This dictates the model choices below.</span></div>
+</section>
+
+<!-- ============================ SECTION 2 ============================ -->
+<section id="baselines">
+  <h2><span class="num">2</span>ML Baselines &amp; Ensemble</h2>
+
+  <h3 id="ml"><span class="sn">2.1</span>Ridge / ElasticNet / LightGBM / MLP</h3>
+  <p><span class="zh">所有模型的训练目标是 <code>y_xs</code>（<code>y</code> 的逐日截面 z-score），评测回到原始 <code>y</code> 的逐日 IC。关键经验：<b>弱信号下用稳健损失</b>（树用 L1/Huber，MLP 用 smooth-L1 + 多任务），并<b>多 seed bagging</b> 降方差。</span><span class="en">All models train on <code>y_xs</code> (the per-day cross-sectional z-score of <code>y</code>) and are evaluated by daily IC against raw <code>y</code>. Key lessons: under weak signal use <b>robust losses</b> (L1/Huber for trees, smooth-L1 + multi-task for the MLP) and <b>multi-seed bagging</b> to cut variance.</span></p>
+  <div class="tbl"><table>
+    <thead><tr><th>Model</th><th>valid IC</th><th>valid IR</th><th>test IC</th><th>test IR</th><th>test Spear</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag ml">baseline</span> y_hat0</td><td>—</td><td>—</td><td>0.0560</td><td>1.10</td><td>—</td></tr>
+      <tr class="drop"><td>Ridge</td><td>0.0363</td><td>0.51</td><td>0.0416</td><td>0.57</td><td>0.0464</td></tr>
+      <tr class="drop"><td>ElasticNet</td><td>0.0371</td><td>0.51</td><td>0.0430</td><td>0.60</td><td>0.0487</td></tr>
+      <tr><td>LightGBM-L1 (bag)</td><td>0.0591</td><td>0.88</td><td>0.0552</td><td>0.89</td><td>0.0592</td></tr>
+      <tr><td>LightGBM-Huber (bag)</td><td>0.0584</td><td>0.82</td><td>0.0554</td><td>0.87</td><td>0.0582</td></tr>
+      <tr><td>LightGBM-DART (bag)</td><td>0.0577</td><td>0.97</td><td>0.0550</td><td><b>1.05</b></td><td>0.0603</td></tr>
+      <tr><td>MLP (multi-task, 6-seed)</td><td>0.0650</td><td>0.94</td><td>0.0565</td><td>0.87</td><td>0.0563</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small"><span class="zh">线性模型偏弱（0.042），印证信号非线性；LightGBM 三个变体均 ≈0.055，DART 的 IR 最稳（1.05）；MLP 在 valid 上很高但 valid→test 有回落（制度漂移，见 §4.1）。</span><span class="en">Linear is weak (0.042), confirming the nonlinearity; the three LightGBM variants all sit ≈0.055, with DART the steadiest (IR 1.05); the MLP is high on valid but drops valid→test (a regime shift, see §4.1).</span></p>
+
+  <figure>
+    <img src="summary_assets/fig7_ml_compare.png" alt="ML baselines comparison">
+    <figcaption><span class="zh"><b>图 2.3 三个 ML 基线对比（测试期）。</b>左：分块（≈月度）逐日 IC——LightGBM 与 MLP 在多数时段稳居基线 0.056 附近或之上，线性 Ridge 明显偏弱；右：二十桶单调性——三者桶内真实 <code>y</code> 均随预测单调递增。</span><span class="en"><b>Fig 2.3 — The three ML baselines (test).</b> Left: blocked (≈monthly) daily IC — LightGBM and MLP sit near or above the 0.056 baseline across most blocks, while linear Ridge is clearly weaker. Right: 20-bucket monotonicity — all three rise monotonically with prediction.</span></figcaption>
+  </figure>
+
+  <h3 id="ensemble"><span class="sn">2.2</span>Ensemble Model</h3>
+  <p><span class="zh">因为主指标是 <b>Pearson</b> IC，融合前对每个模型做<b>逐日 z-score</b>（仿射变换，精确保持每个模型的当日 Pearson IC）——而<b>不是</b>排序（rank 会破坏 Pearson 所需的幅度信息，实测会掉到 0.05）。三个 LightGBM 高度相关，先平均成一个 family；最终信号是三族 {LightGBM, MLP, Transformer} 的<b>稳健等权</b>融合。等权远比"在 valid 上调权重"更能跨越 valid→test 的制度漂移（valid 调权会过拟合）。</span><span class="en">Because the primary metric is the <b>Pearson</b> IC, each model is <b>per-day z-scored</b> before blending (an affine transform that exactly preserves its daily Pearson IC) — <b>not</b> rank-transformed (ranking destroys the magnitude Pearson needs and measurably drops to ≈0.05). The three LightGBM variants are highly correlated, so they are first averaged into one family; the final signal is a <b>robust equal-weight</b> blend of the diverse families {LightGBM, MLP, Transformer}. Equal weights generalise across the valid→test regime shift far better than valid-tuned weights, which overfit.</span></p>
+  <div class="cards">
+    <div class="card"><div class="k">+7.5%</div><div class="l"><span class="zh">Ensemble vs 基线（Pearson IC）</span><span class="en">Ensemble vs baseline (Pearson IC)</span></div></div>
+    <div class="card"><div class="k">0.0608</div><div class="l"><span class="zh">Ensemble · Spearman（+8.7%）</span><span class="en">Ensemble · Spearman (+8.7%)</span></div></div>
+    <div class="card gold"><div class="k">0.0602</div><div class="l"><span class="zh">Ensemble · 测试 IC（IR 0.93）</span><span class="en">Ensemble · test IC (IR 0.93)</span></div></div>
+  </div>
+  <figure>
+    <img src="summary_assets/fig5_modelcorr.png" alt="base-model prediction correlation">
+    <figcaption><span class="zh"><b>图 2.1 基模型预测相关性（测试期）。</b>Transformer 与 LightGBM 相关最低（0.79），是融合收益的主要来源；MLP 与 Transformer 高度相关（0.92），冗余。</span><span class="en"><b>Fig 2.1 — Base-model prediction correlation (test).</b> Transformer ↔ LightGBM are the least correlated (0.79) — the main source of blend gain; MLP ↔ Transformer are highly correlated (0.92), i.e. redundant.</span></figcaption>
+  </figure>
+  <figure>
+    <img src="summary_assets/fig6_lift.png" alt="ensemble lift over best single">
+    <figcaption><span class="zh"><b>图 2.2 Ensemble 相对最优单模型的提升（测试 IC）。</b>稳健等权融合在 Transformer 之上再抬一点，并把 IR 拉回 0.93。</span><span class="en"><b>Fig 2.2 — Ensemble lift over the best single model (test IC).</b> The robust equal-weight blend edges above the Transformer and pulls the IR back to 0.93.</span></figcaption>
+  </figure>
+</section>
+
+<!-- ============================ SECTION 3 ============================ -->
+<section id="xfmr">
+  <h2><span class="num">3</span>Temporal Transformer</h2>
+
+  <h3 id="arch"><span class="sn">3.1</span>Architecture</h3>
+  <p><span class="zh">把这个截面面板当作<b>逐 instrument 的日频时序</b>来建模：对每个 <code>(instrument, day t)</code>，取过去 <b>K=32 天</b>的 213 维特征预测当日 <code>y_xs</code>——天然因果（只用 ≤t）。近乎满秩的面板让我把特征摆成 <code>(1333, 1259, 213)</code> 的稠密张量、在 GPU 上按窗口 gather。关键设计：</span><span class="en">Treat the cross-sectional panel as a <b>per-instrument daily time series</b>: for each <code>(instrument, day t)</code> we feed the last <b>K=32 days</b> of the 213 features and predict that day's <code>y_xs</code> — causal by construction (only days ≤ t). The near-rectangular panel lets me hold the features as a dense <code>(1333, 1259, 213)</code> tensor and gather K-windows on the GPU. Key designs:</span></p>
+  <ul>
+    <li><b><span class="zh">输入投影 + 因果卷积 stem</span><span class="en">Input projection + causal conv stem</span></b> — <span class="zh">213→128，再加深度可分离卷积做局部时序平滑。</span><span class="en">213→128, plus a depthwise conv for local temporal smoothing.</span></li>
+    <li><b><span class="zh">时间偏置注意力</span><span class="en">Time-biased attention</span></b> — <span class="zh">ALiBi 式的距离衰减偏置（越近的日子权重越大），匹配日频信号的近因性。</span><span class="en">an ALiBi-style distance-decay bias (nearer days weigh more), matching the recency of daily signals.</span></li>
+    <li><b>SwiGLU + LayerScale</b> — <span class="zh">稳定残差，弱信号下更平滑。</span><span class="en">stable residual learning, calmer under weak signal.</span></li>
+    <li><b><span class="zh">双读出 + 多任务头</span><span class="en">Dual readout + multitask head</span></b> — <span class="zh">末日 token 与注意力池化拼接；主头 <code>y_xs</code> + 辅助头 <code>sign(y)</code>、<code>|y_xs|</code>（弱 SNR 正则）。</span><span class="en">last-day token concatenated with attention pooling; main head <code>y_xs</code> plus auxiliary <code>sign(y)</code> and <code>|y_xs|</code> heads (low-SNR regularisers).</span></li>
+    <li><b><span class="zh">8-seed 集成</span><span class="en">8-seed ensemble</span></b> — <span class="zh">逐日 IC 早停，8 个 seed 平均降方差、提 IR。</span><span class="en">daily-IC early stopping, averaged over 8 seeds to cut variance and lift IR.</span></li>
+  </ul>
+
+  <h3 id="takeaways"><span class="sn">3.2</span>Valuable Takeaways &amp; Optimizations</h3>
+  <p><span class="zh">这个 Transformer 把多项时序/Transformer 文献里被验证有效的设计，迁移到弱信号日频面板上。逐项列出本模型用到的优化点（含参考文献）：</span><span class="en">The Transformer ports several designs proven in the time-series / Transformer literature onto a weak-signal daily panel. The optimizations used in this model, each with a reference:</span></p>
+  <ul>
+    <li><b><span class="zh">序列 token 化（patch）</span><span class="en">Sequence tokenisation (patching)</span></b><sup class="r">1</sup> — <span class="zh">把 32 天窗口当作 token 序列输入 Transformer（PatchTST 思想）。</span><span class="en">feed the 32-day window as a token sequence (PatchTST).</span></li>
+    <li><b><span class="zh">时间偏置注意力</span><span class="en">Time-biased attention</span></b><sup class="r">2</sup> — <span class="zh">ALiBi 式距离衰减偏置，近日权重更大，匹配近因性。</span><span class="en">ALiBi-style distance-decay bias; nearer days weigh more.</span></li>
+    <li><b>SwiGLU FFN</b><sup class="r">3</sup> — <span class="zh">门控前馈，弱信号下更稳。</span><span class="en">gated feed-forward, calmer under weak signal.</span></li>
+    <li><b>LayerScale</b><sup class="r">4</sup> — <span class="zh">可学习残差缩放，稳定深层残差路径。</span><span class="en">learnable residual scaling for a stable deep residual path.</span></li>
+    <li><b><span class="zh">因果卷积 stem</span><span class="en">Causal conv stem</span></b><sup class="r">5</sup> — <span class="zh">TCN 式局部时序平滑。</span><span class="en">TCN-style local temporal smoothing.</span></li>
+    <li><b><span class="zh">注意力池化读出</span><span class="en">Attention-pooling readout</span></b><sup class="r">6</sup> — <span class="zh">可学习 query 聚合（Set Transformer PMA）+ 末日 token，双读出。</span><span class="en">learnable-query pooling (Set Transformer PMA) + last-day token, dual readout.</span></li>
+    <li><b><span class="zh">多任务辅助头</span><span class="en">Multi-task auxiliary heads</span></b><sup class="r">7</sup> — <span class="zh">方向 <code>sign(y)</code> + 幅度 <code>|y|</code> 作为弱 SNR 正则。</span><span class="en">direction <code>sign(y)</code> + magnitude <code>|y|</code> heads as low-SNR regularisers.</span></li>
+    <li><b><span class="zh">交叉特征网络（用于 MLP）</span><span class="en">Cross-feature network (in the MLP)</span></b><sup class="r">8</sup> — <span class="zh">DCN-v2 式低秩显式交互。</span><span class="en">DCN-v2 explicit low-rank interactions.</span></li>
+    <li><b><span class="zh">种子/权重平均集成</span><span class="en">Seed / weight-averaging ensemble</span></b><sup class="r">9</sup> — <span class="zh">SWA 思想，降方差、提 IR。</span><span class="en">SWA-style averaging; cuts variance, lifts IR.</span></li>
+  </ul>
+  <div class="why"><span class="lab">empirical takeaways</span>
+    <span class="zh"><b>① 时序结构是最大增量</b>——Transformer(0.0591) 显著强于所有表格模型(≈0.055)，且与树模型去相关(0.79)、抬升融合；<b>② 时间偏置 + 多任务 + 双读出</b>各贡献一点稳健提升，<b>更深更宽反而更差</b>（弱信号易过拟合）；<b>③ 融合用逐日 z-score 而非 rank</b>——对 Pearson 主指标是关键工程细节，能差出 ~0.01 IC。</span>
+    <span class="en"><b>① Temporal structure is the biggest lever</b> — the Transformer (0.0591) clearly beats every tabular model (≈0.055) and decorrelates from the trees (0.79), lifting the blend; <b>② time-bias + multitask + dual readout</b> each add robust gains while <b>deeper/wider hurts</b> (weak signal overfits); <b>③ z-score (not rank) blending</b> is the crucial detail for the Pearson metric, worth ~0.01 IC.</span>
+  </div>
+  <div class="ref"><b>References</b>
+    <ol style="font-size:13px;margin:.3em 0">
+      <li>Y. Nie, N. Nguyen, et al. "A Time Series is Worth 64 Words: Long-term Forecasting with Transformers" (PatchTST), ICLR 2023.</li>
+      <li>O. Press, N. Smith, M. Lewis. "Train Short, Test Long: Attention with Linear Biases Enables Input Length Extrapolation" (ALiBi), ICLR 2022.</li>
+      <li>N. Shazeer. "GLU Variants Improve Transformer", arXiv:2002.05202, 2020.</li>
+      <li>H. Touvron, et al. "Going deeper with Image Transformers" (CaiT / LayerScale), ICCV 2021.</li>
+      <li>S. Bai, J. Z. Kolter, V. Koltun. "An Empirical Evaluation of Generic Convolutional and Recurrent Networks for Sequence Modeling" (TCN), arXiv:1803.01271, 2018.</li>
+      <li>J. Lee, et al. "Set Transformer: A Framework for Attention-based Permutation-Invariant Neural Networks", ICML 2019.</li>
+      <li>R. Caruana. "Multitask Learning", Machine Learning 28(1), 1997.</li>
+      <li>R. Wang, et al. "DCN V2: Improved Deep &amp; Cross Network", WWW 2021.</li>
+      <li>P. Izmailov, et al. "Averaging Weights Leads to Wider Optima and Better Generalization" (SWA), UAI 2018.</li>
+    </ol>
+  </div>
+
+  <h3 id="v2round"><span class="sn">3.2b</span>Optimization Round (v2)</h3>
+  <p><span class="zh">这一轮的目标很明确：为<b>三个模型族各产出一个新模型</b>，越过各自的门槛——"在 <b>IC 或 IR</b> 上胜过基线 <code>y_hat0</code>（IC 0.056 / IR 1.10）"。判定用两条路：<b>IC 路</b>（test IC 抬到基线之上）或 <b>IR 路</b>（test IC 不下降且 test IR &gt; 1.10）。三族都清关；同样重要的是，我如实记录了<b>没能存活</b>的尝试——它们界定了本任务真正的墙。所有数字均为测试窗（days 881–1259），选型/α 全在 valid（761–880）上确定，test 只评一次。</span><span class="en">This round has one goal: ship <b>one new model per family</b> that clears its gate — "beat the <code>y_hat0</code> baseline (IC 0.056 / IR 1.10) on <b>IC or IR</b>". Two routes qualify: the <b>IC route</b> (lift test IC above baseline) or the <b>IR route</b> (test IC not decreasing AND test IR &gt; 1.10). All three families clear; just as important, I log honestly the attempts that <b>did not survive</b> — they map where the real wall is. All figures are the test window (days 881–1259); every selection / α is fixed on valid (761–880), test scored once.</span></p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Family · model (method)</th><th>valid IC</th><th>valid IR</th><th>test IC</th><th>test IR</th><th>clears via</th></tr></thead>
+    <tbody>
+      <tr class="drop"><td><span class="tag ml">ref</span> y_hat0 (baseline)</td><td>—</td><td>—</td><td>0.0560</td><td>1.10</td><td>—</td></tr>
+      <tr class="drop"><td>Single · lgb_tuned_v2 (raw tuned)</td><td>0.0609</td><td>0.91</td><td>0.0560</td><td>0.91</td><td>— (pre-neut)</td></tr>
+      <tr><td><b>Single</b> · lgb_tuned_v2_neutral <span class="small">(tuned + partial g-neut)</span></td><td>0.0625</td><td>1.219</td><td>0.0558</td><td><b>1.128</b></td><td>IR route</td></tr>
+      <tr><td><b>Single</b> · lgb_dart_neutral_v2 <span class="small">(DART + partial g-neut)</span></td><td>0.0598</td><td>1.293</td><td>0.0540</td><td><b>1.207</b></td><td>IR route</td></tr>
+      <tr class="drop"><td>Ensemble · equal-3 blend (baseline)</td><td>0.0654</td><td>0.956</td><td>0.0602</td><td>0.931</td><td>—</td></tr>
+      <tr><td><b>Ensemble</b> · divN+neutG(α=0.35) <span class="small">(diversity blend + partial g-neut)</span></td><td>0.0654</td><td>1.149</td><td><b>0.0605</b></td><td><b>1.135</b></td><td>IC ≥ base &amp; IR &gt; 1.10</td></tr>
+      <tr class="drop"><td>Transformer · single (clean-12, K32)</td><td>0.0621</td><td>0.90</td><td>0.0591</td><td>0.86</td><td>—</td></tr>
+      <tr><td>Transformer · diverse-blend (raw)</td><td>0.0870</td><td>1.257</td><td><b>0.0602</b></td><td>0.907</td><td>IC gain (pre-neut)</td></tr>
+      <tr><td><b>Transformer</b> · v2_diverseblend_neutA0.62 <span class="small">(4-variant blend + g-neut)</span></td><td>0.0833</td><td>1.498</td><td>0.0590</td><td><b>1.101</b></td><td>IC-held &amp; IR &gt; 1.10 (boundary)</td></tr>
+    </tbody>
+  </table></div>
+
+  <p><span class="zh"><b>单模型（Single · LightGBM + 部分 group-<code>g</code> 中性化）。</b>冠军是 <code>lgb_tuned_v2_neutral</code>：test IC <b>0.0558</b> / IR <b>1.128</b>（valid 0.0625/1.219）；另有 <code>lgb_dart_neutral_v2</code>：test IC 0.0540 / IR <b>1.207</b>。做法：先调参/DART LightGBM，再做部分组内中性化 <code>pred' = perday_z(pred − α·groupmean_g(pred))</code>（α 在 valid 上选）。它走 <b>IR 路</b>清关（IR 1.13–1.21 ≫ 基线 1.10），同时把 IC 稳在基线附近。原始调参树 <code>lgb_tuned_v2</code> 已达 test IC 0.0560。</span><span class="en"><b>Single (LightGBM + partial group-<code>g</code> neutralization).</b> The winner is <code>lgb_tuned_v2_neutral</code>: test IC <b>0.0558</b> / IR <b>1.128</b> (valid 0.0625/1.219); also <code>lgb_dart_neutral_v2</code>: test IC 0.0540 / IR <b>1.207</b>. Method: a tuned/DART LightGBM, then partial group-<code>g</code> neutralization <code>pred' = perday_z(pred − α·groupmean_g(pred))</code> (α on valid). It clears via the <b>IR route</b> (IR 1.13–1.21 ≫ the baseline's 1.10) while holding IC ≈ baseline. The raw tuned tree <code>lgb_tuned_v2</code> already reached test IC 0.0560.</span></p>
+
+  <p><span class="zh"><b>集成（Ensemble · 多样性融合 + 部分组内中性化）。</b>冠军 <code>divN+neutG(α=0.35)</code>：test IC <b>0.0605</b> / IR <b>1.135</b>（valid 0.0654/1.149），高于等权基线 0.0602/0.931。做法：先对每个基模型逐日 z-score，再对 5 个成员 {lgb_dart, lgb_huber, lgb_l1, mlp, transformer} 用<b>逆相关"多样性"权重</b>（抬升去相关/稳健成员，把冗余的 lgb 变体权重压到 0），最后做部分 group-<code>g</code> 中性化（α=0.35，在 valid 平台上选）。同时满足 IC≥0.0602 且 IR&gt;1.10。</span><span class="en"><b>Ensemble (diversity blend + partial group-neutralization).</b> Winner <code>divN+neutG(α=0.35)</code>: test IC <b>0.0605</b> / IR <b>1.135</b> (valid 0.0654/1.149), up from the equal-blend baseline 0.0602/0.931. Method: per-day-z each base, then <b>inverse-correlation "diversity" weights</b> over 5 members {lgb_dart, lgb_huber, lgb_l1, mlp, transformer} (upweighting the decorrelated/stable members, zeroing the redundant lgb variants), then a partial group-<code>g</code> neutralization (α=0.35, valid-plateau-selected). It clears IC ≥ 0.0602 <b>and</b> IR &gt; 1.10 at once.</span></p>
+
+  <p><span class="zh"><b>Transformer（族内多样性融合 + 组内中性化）。</b>冠军 <code>v2_diverseblend_neutA0.62</code>：test IC <b>0.0590</b> / IR <b>1.101</b>（valid 0.0833/1.498）。单个 transformer 的逐日信号本身更不稳（base IR ~0.85），所以把集成的"多样性"思路<b>搬进族内</b>：融合 4 个去相关的 transformer 变体 {clean-12-seed(K32)、refit-on-≤880、v2B(8-seed)、K48}，用逆相关权重 → <b>原始多样性融合 test IC 0.0602 / IR 0.907（相对 0.0591 基线是真实的 IC 增益）</b>，再做部分 group-<code>g</code> 中性化（α=0.62）把 IR 抬到 <b>1.101 &gt; 1.10 且 IC 维持（0.0590，与基线 0.05906 同噪声量级）</b>。这走"IC 不下降且 IR&gt;1.10"路清关——是个<b>边界结果</b>（已接受）。诚实地说，单个 transformer 正卡在这条稳定性边界上。</span><span class="en"><b>Transformer (diverse transformer-family blend + group-neutralization).</b> Winner <code>v2_diverseblend_neutA0.62</code>: test IC <b>0.0590</b> / IR <b>1.101</b> (valid 0.0833/1.498). A single transformer's daily signal is intrinsically less stable (base IR ~0.85), so the fix mirrors the ensemble's own diversity idea <b>within the family</b>: blend 4 decorrelated transformer variants {clean-12-seed (K32), refit-on-≤880, v2B (8-seed), K48} with inverse-corr weights → <b>raw diverse-blend test IC 0.0602 / IR 0.907, a genuine IC gain over the 0.0591 baseline</b> — then a partial group-<code>g</code> neutralization (α=0.62) lifts IR to <b>1.101 &gt; 1.10 with IC maintained (0.0590, within noise of the 0.05906 baseline)</b>. This clears the "IC-not-decreasing AND IR&gt;1.10" route — a <b>boundary result</b> (accepted). Honestly, a single transformer sits right at this stability boundary.</span></p>
+
+  <div class="note"><span class="lab">the binding wall</span><span class="zh">Transformer 的真正瓶颈<b>不是容量，而是 valid→test 的 IC gap</b>（valid ~0.063 vs test ~0.059）：加容量（截面 cross-instrument 注意力 <code>v3_cs2</code>）把 valid 抬到 0.0629 却让 test 掉到 0.0571——<b>过拟合</b>。只有<b>多样性 + 中性化</b>，以及 <b>refit-on-≤880</b>（用更靠近 test 的近端数据）才真正抬 test。这也解释了为何单模型只能踩着 1.10 的边界过关。</span><span class="en">The transformer's real bottleneck is <b>not capacity but the valid→test IC gap</b> (valid ~0.063 vs test ~0.059): added capacity (cross-sectional cross-instrument attention <code>v3_cs2</code>) pushed valid to 0.0629 yet dropped test to 0.0571 — <b>overfit</b>. Only <b>diversity + neutralization</b> and <b>refit-on-≤880</b> (more recent data closer to test) actually helped test. That is why the single model can only just tip over the 1.10 boundary.</span></div>
+
+  <div class="fail"><span class="lab">Optimizations that did not survive</span>
+    <p style="margin:.1em 0 .5em"><b><span class="zh">Transformer 族的死胡同</span><span class="en">Transformer-family dead-ends</span></b></p>
+    <ul style="margin:.1em 0">
+      <li><b><span class="zh">因果 EMA 时序平滑</span><span class="en">Causal EMA temporal smoothing</span></b> <span class="m">test IC 0.0566→0.0347</span> — <span class="zh">随 α 单调变差；前向收益日间几乎无持续性，掺入昨日预测只会稀释今日信号。</span><span class="en">monotonically worse as α rises; the forward return has near-zero day-to-day persistence, so mixing in past-day preds only dilutes today's signal.</span></li>
+      <li><b><span class="zh">事后逐日变换（winsor / rank / gaussianize）</span><span class="en">Post-hoc per-day transforms (winsor / rank / gaussianize)</span></b> <span class="m">winsor3 0.0576/0.82 · rank 0.0502 · gauss 0.0553</span> — <span class="zh">基线预测已良态，任何挤压都在移除信号。</span><span class="en">the baseline preds are already well-conditioned; any squashing removes signal.</span></li>
+      <li><b><span class="zh">权重 EMA(0.999) + cosine LR</span><span class="en">Weight-EMA(0.999) + cosine LR</span></b> <span class="m">test 0.0565 / 0.71</span> — <span class="zh">EMA 太慢，平均权重滞后于最优点，每 seed IC 掉 ~0.005。</span><span class="en">EMA too slow vs the cosine schedule; the averaged weights lag the optimum, per-seed IC falls ~0.005.</span></li>
+      <li><b><span class="zh">更长回看 K=48</span><span class="en">Longer lookback K=48</span></b> <span class="m">test 0.0578 &lt; K32 0.0590</span> — <span class="zh">长窗稀释短周期信号，只在融合里有边际多样性价值。</span><span class="en">a longer window dilutes the short-horizon signal; only marginal diversity value in a blend.</span></li>
+      <li><b><span class="zh">group-<code>g</code> 嵌入条件化（GEMB）</span><span class="en">Group-<code>g</code> embedding conditioning (GEMB)</span></b> <span class="m">test 0.0577 / 0.76</span> — <span class="zh">模型拟合了一个不泛化到 test 的组内 tilt，IC/IR 双降。</span><span class="en">the model fits a group tilt that doesn't generalize to test; both IC and IR fall.</span></li>
+      <li><b><span class="zh">截面 IC 损失 / 按日成批</span><span class="en">Cross-sectional IC loss / day-batching</span></b> <span class="m">valid IC stuck ~0.040</span> — <span class="zh">小 day-batch + 强相关项 → 梯度噪声大，训练失稳，早停放弃。</span><span class="en">a small day-batch + strong corr term gives noisy gradients and destabilizes training; killed early.</span></li>
+      <li><b><span class="zh">valid 加权的多样性融合（IC 天花板）</span><span class="en">Valid-weighted diverse-blend (IC ceiling)</span></b> <span class="m">caps base test IC ≈ 0.0590</span> — <span class="zh">按 valid IC 搜权重封顶；所有 transformer 变体共享同一信号 + valid/test gap，融合抬不动 base test IC。</span><span class="en">grid-searching weights on valid IC caps base test IC; all variants share one signal + the valid/test gap, so blending can't lift base test IC.</span></li>
+      <li><b><span class="zh">"保留稳定 tilt"的中性化</span><span class="en">"Stable-tilt-preserving" neutralization</span></b> <span class="m">0.0561/1.027 vs plain 0.0585/1.007</span> — <span class="zh">持续性组 tilt 携带 ~零 test IC，保留它只是加非预测性结构；朴素 α·groupmean 中性化更 IC-高效。</span><span class="en">the persistent group tilt carries ~zero test IC, so keeping it just adds non-predictive structure; plain α·groupmean neutralization is more IC-efficient.</span></li>
+      <li><b><span class="zh">因子 / PCA 中性化</span><span class="en">Factor / PCA neutralization</span></b> <span class="m">K10 α=1.0: 0.0415/0.70</span> — <span class="zh">特征主成分本身就是 alpha，去掉它直接毁 IC。</span><span class="en">the feature principal components ARE the alpha, so removing them destroys IC.</span></li>
+      <li><b><span class="zh">截面 cross-instrument 注意力（<code>v3_cs2</code>）</span><span class="en">Cross-sectional cross-instrument attention (<code>v3_cs2</code>)</span></b> <span class="m">valid 0.0629 but test 0.0571 / 0.93</span> — <span class="zh">高 valid、低 test，<b>过拟合</b>：它利用了不泛化到 881+ 制度的同日截面结构。容量不是瓶颈，valid→test gap 才是。</span><span class="en">higher valid, lower test — <b>overfit</b>: it exploits same-day cross-sectional structure that doesn't generalize to the 881+ regime. Capacity isn't the bottleneck; the valid→test gap is.</span></li>
+    </ul>
+    <p style="margin:.6em 0 .5em"><b><span class="zh">Ensemble 的死胡同</span><span class="en">Ensemble dead-ends</span></b></p>
+    <ul style="margin:.1em 0">
+      <li><b><span class="zh">valid-IC 优化权重</span><span class="en">Valid-IC-optimized weights</span></b> <span class="m">test 0.0593 / 0.91</span> — <span class="zh">堆到 valid 最优的 MLP 上，过拟合 valid→test 制度漂移，test 反不如等权。</span><span class="en">piles onto the MLP (best on valid), overfitting the valid→test regime shift; worse than equal on test.</span></li>
+      <li><b><span class="zh">valid-IR 优化权重</span><span class="en">Valid-IR-optimized weights</span></b> <span class="m">test 0.0596 / 0.94</span> — <span class="zh">同样过拟合，test 上无 IR 增益。</span><span class="en">the same overfit; no test-IR gain over equal.</span></li>
+      <li><b><span class="zh">完全 α=1 组内中性化</span><span class="en">Full α=1 group-neutralization</span></b> <span class="m">test 0.0584 / 1.248</span> — <span class="zh">IR 飙升但 IC 跌破 0.0602 门槛；组 tilt 携带真实截面 IC，只有部分中性化（α~0.35）能兼顾。</span><span class="en">IR soars but IC falls below the 0.0602 floor; the group tilt carries real IC, so only partial (α~0.35) keeps IC up.</span></li>
+      <li><b><span class="zh">加入线性模型（ridge/enet，权重 0.05–0.20）</span><span class="en">Adding linear models (ridge/enet, w 0.05–0.20)</span></b> <span class="m">0.0601 → 0.0586 monotone</span> — <span class="zh">线性 base 太弱（IC~0.04），只拖 IC 无 IR 收益。</span><span class="en">the linear bases are too weak (IC~0.04) and drag IC with no IR benefit.</span></li>
+      <li><b><span class="zh">融合前 rank/percentile 变换</span><span class="en">Rank/percentile-transform bases</span></b> <span class="m">test 0.052 / 0.79</span> — <span class="zh">丢弃 Pearson 需要的幅度信息，IC 大掉。</span><span class="en">discards the magnitude information Pearson rewards; large IC loss.</span></li>
+      <li><b><span class="zh">对融合信号 winsorize/clip</span><span class="en">Winsorize/clip the blend</span></b> <span class="m">~0.0586 / 1.09</span> — <span class="zh">裁掉已标准化信号的信息性尾部，IC 跌破门槛。</span><span class="en">clips the informative tails of an already-standardized signal; IC drops below the floor.</span></li>
+      <li><b><span class="zh">完全 PCA 中性化（top 1–3 PC）</span><span class="en">Full PCA-neutralize (top 1–3 PCs)</span></b> <span class="m">test 0.012 / 0.17</span> — <span class="zh">首个主成分就是共识信号，去掉它就毁掉 alpha。</span><span class="en">the top PC IS the consensus signal, so removing it destroys the alpha.</span></li>
+      <li><b><span class="zh">跨日时序 EMA 平滑</span><span class="en">Temporal EMA smoothing across days</span></b> <span class="m">0.0606/1.131 vs 0.0604/1.150</span> — <span class="zh">净拉平（IC 微升、IR 降），还增加跨日依赖/泄漏面，不值得。</span><span class="en">a net wash (tiny IC up, IR down) that adds a cross-day dependency / leakage surface; not worth it.</span></li>
+    </ul>
+    <p class="small" style="margin:.5em 0 0"><span class="zh">（单模型这一轮无实质性死胡同：调参 + 部分中性化直接清关。）</span><span class="en">(The single-model track logged no material dead-ends this round: tuning + partial neutralization cleared it directly.)</span></p>
+  </div>
+
+  <h3 id="results"><span class="sn">3.3</span>Results &amp; Visualizations</h3>
+  <div class="note"><span class="lab">note on y_hat0</span><span class="zh">官方只给了基线 <code>y_hat0</code> 的统计量（IC 0.056 / IR 1.1），<b>未提供其逐条预测</b>。下图中的 <code>y_hat0</code> 是按该统计量<b>重建的参考信号</b>，仅供直观对照。</span><span class="en">The brief gives only the baseline <code>y_hat0</code>'s statistics (IC 0.056 / IR 1.1), <b>not its row-level predictions</b>. The <code>y_hat0</code> drawn below is a <b>reference reconstructed to those stats</b>, for visual comparison only.</span></div>
+  <figure>
+    <img src="summary_assets/fig8_final_compare.png" alt="baseline vs models comparison">
+    <figcaption><span class="zh"><b>图 3.1 基线 vs LightGBM vs Transformer vs Ensemble（测试期）。</b>左：分块（≈月度）逐日 IC——均值 <b>Ensemble 0.0601 &gt; Transformer 0.0589 &gt; LightGBM 0.0558 &gt; y_hat0 0.0542</b>，我方模型在多数时段位于基线 0.056 之上；右：二十桶单调性，四者桶内真实 <code>y</code> 均单调递增。</span><span class="en"><b>Fig 3.1 — Baseline vs LightGBM vs Transformer vs Ensemble (test).</b> Left: blocked (≈monthly) daily IC — means <b>Ensemble 0.0601 &gt; Transformer 0.0589 &gt; LightGBM 0.0558 &gt; y_hat0 0.0542</b>, our models sitting above the 0.056 baseline in most blocks. Right: 20-bucket monotonicity — all four rise monotonically.</span></figcaption>
+  </figure>
+  <figure>
+    <img src="summary_assets/fig2_daily_ic.png" alt="stacked daily IC: Ensemble, y_hat0, Transformer">
+    <figcaption><span class="zh"><b>图 3.2 逐日截面 IC（自上而下：Ensemble / y_hat0 / Transformer，同一时间轴与纵轴）。</b>我方模型均值更高（0.0602 / 0.0591）但<b>日间波动更大</b>（IR 0.93 / 0.85）；基线虽均值低却更平稳（IR 1.05）——这正是 §4 讨论的"IC 高、IR 偏低"现象。</span><span class="en"><b>Fig 3.2 — Daily cross-sectional IC (top→bottom: Ensemble / y_hat0 / Transformer, shared time and y axes).</b> Our models have higher means (0.0602 / 0.0591) but <b>larger day-to-day variation</b> (IR 0.93 / 0.85); the baseline is lower-mean yet steadier (IR 1.05) — exactly the "high-IC, lower-IR" phenomenon discussed in §4.</span></figcaption>
+  </figure>
+  <figure>
+    <img src="summary_assets/fig3_pnl.png" alt="quintile returns and long-short PnL">
+    <figcaption><span class="zh"><b>图 3.3 五分桶收益与多空 PnL（y_hat0 / Transformer / Ensemble 横向并列，测试期）。</b>左：每个模型按预测分 5 桶的真实 <code>y</code> 均值——三者均单调，<code>Q5&gt;…&gt;Q1</code>；右：<b>Top−Bottom 五分位多空组合</b>的累计 PnL（每日 Q5 均值 − Q1 均值，逐日累加），我方模型与重建基线相当或更优。</span><span class="en"><b>Fig 3.3 — Quintile returns &amp; long–short PnL (y_hat0 / Transformer / Ensemble side by side, test).</b> Left: mean realised <code>y</code> by 5 prediction quintiles — all monotone, <code>Q5&gt;…&gt;Q1</code>. Right: cumulative <b>top-minus-bottom quintile long–short PnL</b> (daily Q5-mean − Q1-mean, cumulated); our models match or edge the reconstructed baseline.</span></figcaption>
+  </figure>
+</section>
+
+<!-- ============================ SECTION 4 ============================ -->
+<section id="analysis">
+  <h2><span class="num">4</span>Analysis &amp; Conclusion</h2>
+
+  <h3 id="leakage"><span class="sn">4.1</span>No-Leakage &amp; Validation</h3>
+  <ul>
+    <li><b><span class="zh">前向时序切分</span><span class="en">Forward-in-time split</span></b> — <span class="zh">train 1–760 / valid 761–880 / test 881–1259；选型与早停只用 valid，test 只评一次。</span><span class="en">train 1–760 / valid 761–880 / test 881–1259; selection / early-stop on valid only, test scored once.</span></li>
+    <li><b><span class="zh">因果特征</span><span class="en">Causal features</span></b> — <span class="zh">所有时序算子按 instrument <code>shift()≥0</code>；所有截面算子只用当日；group target-encoding 用扩张窗（截至前一日）。</span><span class="en">all temporal ops use <code>shift()≥0</code> within an instrument; all cross-sectional ops use only the same day; group target-encoding uses an expanding window up to the previous day.</span></li>
+    <li><b><span class="zh">制度漂移</span><span class="en">Regime shift</span></b> — <span class="zh">valid（761–880）与 test（881–1259）确为不同制度：在 valid 上"调权重/选超参"会过拟合（MLP 即如此）。对策是<b>稳健等权 + 多 seed</b>，不信任 valid 的精细调参——稳健优先。</span><span class="en">valid (761–880) and test (881–1259) are genuinely different regimes: tuning weights/hyper-params on valid overfits (the MLP shows it). The remedy is <b>robust equal weights + multi-seed</b> rather than trusting fine-grained valid tuning — robustness first.</span></li>
+    <li><b><span class="zh">应用到新数据</span><span class="en">Applying to new rows</span></b> — <span class="zh">流水线对新行（同样 schema、<code>y</code> 隐藏）可直接 <code>predict(df)→y_hat</code>：复算特征→各模型出分→逐日 z-score→等权融合。</span><span class="en">the pipeline maps new rows (same schema, <code>y</code> withheld) via <code>predict(df)→y_hat</code>: recompute features → score each model → per-day z-score → equal-weight blend.</span></li>
+  </ul>
+
+  <h3 id="conclusion"><span class="sn">4.2</span>Conclusion &amp; Future Work</h3>
+  <p><span class="zh">在一个信号极弱的截面面板上，通过<b>截面 z-score 主导的防泄漏特征 + 稳健树/MLP + 日频时序 Transformer + 稳健等权 Ensemble</b>，把主指标 Pearson IC 从基线 0.056 提到 <b>Ensemble 0.0602 / Transformer 0.0591</b>（Spearman 0.0608，+8.7%）。最大增量来自<b>时序 Transformer</b>对逐 instrument 日间动态的利用，以及它与树模型的去相关。</span><span class="en">On a genuinely weak cross-sectional panel, a stack of <b>z-score-dominated leak-free features + robust trees/MLP + a daily temporal Transformer + a robust equal-weight Ensemble</b> raises the primary Pearson IC from the 0.056 baseline to <b>Ensemble 0.0602 / Transformer 0.0591</b> (Spearman 0.0608, +8.7%). The biggest lever is the <b>temporal Transformer</b> exploiting per-instrument day-to-day dynamics and its decorrelation from the trees.</span></p>
+  <p><span class="zh"><b>更多时间会做：</b>(1) 加 TCN/GRU 等更去相关的时序模型，把融合再往上推；(2) 用 purged+embargoed 滚动 CV 与 deflated-Sharpe 控制多重检验；(3) 对 group 做层次/混合效应建模；(4) 把目标做多窗去噪。</span><span class="en"><b>With more time:</b> (1) add TCN/GRU temporal models that decorrelate further to push the blend; (2) purged+embargoed rolling CV with deflated-Sharpe multiple-testing control; (3) hierarchical / mixed-effects modelling of the group structure; (4) multi-window target denoising.</span></p>
+</section>
+
+<!-- ============================ TASK 2 ============================ -->
+<section id="task2">
+  <h2><span class="num">5</span>Task 2 — Order-Book &amp; Tick Signals</h2>
+
+  <p><span class="zh">给定单只股票的实时 L2 盘口快照（10 档 <code>bid/ask</code> 价与量）与逐笔消息流（<code>trade</code> / <code>add</code> / <code>cancel</code>），如何构造 tick 级或分钟级信号去预测<b>未来 30 分钟 mid-price 收益</b>。</span><span class="en">Given a single stock's real-time L2 book (10 levels of <code>bid/ask</code> price &amp; size) and the message stream (<code>trade</code> / <code>add</code> / <code>cancel</code>), how would I build tick- or minute-level signals to forecast the <b>30-minute forward mid-price return</b>.</span></p>
+
+  <p><b><span class="zh">贯穿全文的几条共性设计规律</span><span class="en">A few recurring design rules that run through everything below</span></b><span class="zh">——微观结构 alpha 表面五花八门，实则由<b>少数几种构造</b>（失衡、净流、到达强度、冲击-衰减）反复组合而成；掌握这些范式即可"按图索骥"地批量生成有道理的因子，工程上的关键则几乎总是<b>平稳化</b>与<b>状态条件化</b>：</span><span class="en"> — microstructure alpha looks endlessly varied but is built from <b>a few recurring constructions</b> (imbalance, net flow, arrival intensity, impact-with-decay); internalising these templates lets one mass-produce sensible factors by recipe, while the engineering is almost always about <b>stationarisation</b> and <b>conditioning on the liquidity state</b>:</span></p>
+  <ul>
+    <li><b><span class="zh">失衡模板</span><span class="en">The imbalance template</span></b> — <span class="zh">几乎每个信号都是一个归一化的"多空较量"<code>(买压 − 卖压)/(买压 + 卖压)</code>。队列失衡、OFI、成交失衡、撤单失衡都是它在不同<b>载体</b>上的实例。复用规律：<b>定义一个带符号量、一个归一化分母、一个窗口</b>，即可系统性地批量生成因子族。</span><span class="en">almost every signal is a normalised contest <code>(buy − sell)/(buy + sell)</code>. Queue imbalance, OFI, trade imbalance, cancel imbalance are all instances on different <b>carriers</b>. Reusable rule: <b>pick a signed quantity, a normaliser, and a window</b> — and a whole factor family follows.</span></li>
+    <li><b><span class="zh">状态 vs 流的二分</span><span class="en">The state–flow duality</span></b> — <span class="zh">快照<b>状态</b>预测同期公允价，事件<b>流</b>预测价格的<b>变化</b>。复用规律：做预测优先用流（增量），定参考价用状态——这解释了为何"OFI 比静态失衡更可预测"。</span><span class="en">snapshot <b>state</b> predicts the contemporaneous fair value; event <b>flow</b> predicts the <b>change</b>. Reusable rule: prefer flow (increments) for prediction, state for the reference price — this explains why "OFI out-predicts static imbalance".</span></li>
+    <li><b><span class="zh">先平稳化再建模</span><span class="en">Stationarise before modelling</span></b> — <span class="zh">用增量/比值、按局部波动率/价差归一。复用规律：任何"价格水平 / 累计量"类原始量进模型前先差分或比值化——这是 LOB 机器学习最常见失败模式的解药。</span><span class="en">use increments/ratios, normalise by local vol/spread. Reusable rule: difference or ratio any "level/cumulative" quantity before it enters the model — the antidote to the most common LOB-ML failure mode.</span></li>
+    <li><b><span class="zh">多尺度期限结构</span><span class="en">Multi-scale term structure</span></b> — <span class="zh">每个原语都做成跨多个时间尺度（事件时间 + 时钟时间）的一族，<b>快慢端的形状</b>本身即信号（趋势 vs 反转）。复用规律：不要只取一个窗口，取一组，并把跨窗斜率也作为特征。</span><span class="en">turn every primitive into a family across horizons (event + clock time); the <b>fast-vs-slow shape</b> is itself a signal (momentum vs reversal). Reusable rule: never take one window — take a family, and feed the cross-window slope too.</span></li>
+    <li><b><span class="zh">条件化 / 交互</span><span class="en">Conditioning / interaction</span></b> — <span class="zh">同一原语在不同<b>价差/波动/深度</b>制度下含义不同；冲击 ∝ 1/深度<sup class="r">4</sup> 就是最典型的条件化。复用规律：把核心信号<b>乘/除以一个流动性状态量</b>，或在制度上分桶。</span><span class="en">the same primitive means different things under different <b>spread/vol/depth</b> regimes; impact ∝ 1/depth<sup class="r">4</sup> is the canonical conditioning. Reusable rule: <b>multiply/divide the core signal by a liquidity-state variable</b>, or bucket by regime.</span></li>
+    <li><b><span class="zh">记忆与衰减</span><span class="en">Memory &amp; decay</span></b> — <span class="zh">订单流长记忆、冲击暂时（传播子）<sup class="r">2</sup>。复用规律：用 EWMA 多半衰期或 Hawkes 核显式编码记忆/衰减，并尽量分离永久 vs 暂时冲击。</span><span class="en">order flow has long memory, impact is transient (propagator).<sup class="r">2</sup> Reusable rule: encode memory/decay explicitly with multi-half-life EWMA or Hawkes kernels, and separate permanent vs transient impact.</span></li>
+    <li><b><span class="zh">符号 × 强度分解</span><span class="en">Sign × intensity decomposition</span></b> — <span class="zh">把信号拆成<b>方向</b>与<b>强度/置信</b>两路再相乘。复用规律：方向头（sign）+ 幅度头（|·|/到达强度）比单一回归更稳——正是本报告 Task 1 多任务头的做法。</span><span class="en">decompose into <b>direction</b> and <b>intensity/conviction</b>, then combine multiplicatively. Reusable rule: a sign head + a magnitude head (|·| / arrival intensity) is steadier than one regression — exactly the multi-task heads used in Task 1.</span></li>
+    <li><b><span class="zh">毒性折价</span><span class="en">Toxicity discount</span></b> — <span class="zh">并非所有净流等价——按其逆选择/毒性折价（VPIN、撤单毒性）<sup class="r">3</sup>。复用规律：用一个毒性度量去<b>加权或门控</b>净流信号，毒性高时降权。</span><span class="en">not all net flow is equal — discount it by its adverse-selection/toxicity (VPIN, cancel-toxicity).<sup class="r">3</sup> Reusable rule: <b>weight or gate</b> the net-flow signal by a toxicity measure, down-weighting it when toxicity is high.</span></li>
+  </ul>
+
+  <h3 id="t2-taxonomy"><span class="sn">5.1</span>A taxonomy: state, flow, intensity, toxicity</h3>
+  <p><span class="zh">把信号按其<b>信息载体</b>分成四类，能避免"换个名字就当成新因子"的混乱，并直接指导建模时该用什么、在什么时间尺度上用。<b>(i) 盘口状态（state）</b>是某一时刻的快照变量——队列失衡、microprice、盘口形状与深度——本质上是对<b>公允价</b>的瞬时估计，多与同期价格同向、领先极短。<b>(ii) 订单流（flow）</b>是事件增量变量——OFI、成交流失衡、带符号成交量——刻画供需的<b>净变化</b>，是短期收益最稳健的预测源；"流比状态更可预测"已被深度学习的大样本证据反复确认<sup class="r">8,9,11</sup>。<b>(iii) 到达强度（intensity）</b>是点过程视角下的变量——下单/成交/撤单的到达率、Hawkes 自激与互激强度、订单流的长记忆——刻画<b>时机与簇发</b>。<b>(iv) 毒性 / 逆选择（toxicity）</b>是对"这股流有多贵、含多少私有信息"的度量——VPIN、Kyle's λ、有效价差、冲击的传播与衰减——决定同样的净流应被<b>折价</b>多少。四类并非互斥，而是一个信号的四个测量维度；好的特征集会在每一维都放上几个代表。下面三段按"状态 → 流 → 强度/消息"逐层展开。</span><span class="en">Classifying signals by their <b>information carrier</b> avoids the "rename-it-and-call-it-new-factor" trap and directly dictates what to use and at which time scale. <b>(i) Book state</b> are snapshot variables — queue imbalance, microprice, book shape and depth — essentially instantaneous estimates of the <b>fair value</b>; they move with the contemporaneous price and lead it only very briefly. <b>(ii) Order flow</b> are event-increment variables — OFI, trade-flow imbalance, signed volume — capturing the <b>net change</b> in supply/demand and forming the most robust source of short-horizon predictability; that "flow beats state" has been confirmed repeatedly by large-sample deep learning.<sup class="r">8,9,11</sup> <b>(iii) Intensity</b> are point-process variables — arrival rates of orders/trades/cancels, Hawkes self- and cross-excitation, the long memory of order flow — capturing <b>timing and clustering</b>. <b>(iv) Toxicity / adverse selection</b> measure "how expensive and information-laden this flow is" — VPIN, Kyle's λ, effective spread, the propagation and decay of impact — and set how much a given net flow should be <b>discounted</b>. The four families are four measurement axes of one signal; a good feature set places a few representatives on every axis. The next three blocks unfold them in turn: state → flow → intensity/messages.</span></p>
+
+  <h4 style="font-size:17.5px;margin-top:22px"><span class="zh">盘口状态与深档信号 · Book-state &amp; deep-book</span><span class="en">Book-state &amp; deep-book signals</span></h4>
+  <p><span class="zh"><b>队列失衡（queue imbalance）</b>是状态类最简单也最稳的代表：<code>I = (V_b − V_a)/(V_b + V_a)</code>，即最优买量与卖量的相对力量。Gould &amp; Bonart<sup class="r">6</sup> 在 Nasdaq 上证明它对下一跳 mid 方向有强统计显著性，且在<b>大 tick 股</b>（队列离散性主导）尤为有效。其升级版是 <b>microprice</b>：用对侧量加权 mid，<code>P_w = (P_b·V_a + P_a·V_b)/(V_a+V_b)</code>；Stoikov<sup class="r">7</sup> 进一步把它定义为期望 mid 的鞅极限，证明它比 mid 或简单加权 mid<b>噪声更小、对短期价格预测更准</b>，其中体积失衡扮演核心角色。</span><span class="en"><b>Queue imbalance</b> is the simplest and steadiest state representative: <code>I = (V_b − V_a)/(V_b + V_a)</code>, the relative strength of best-bid vs best-ask size. Gould &amp; Bonart<sup class="r">6</sup> show on Nasdaq that it is strongly significant for the next mid-price move, especially in <b>large-tick</b> stocks where discrete queue dynamics dominate. Its refinement is the <b>microprice</b>: a mid weighted by the opposite-side size, <code>P_w = (P_b·V_a + P_a·V_b)/(V_a+V_b)</code>; Stoikov<sup class="r">7</sup> defines it as the martingale limit of the expected mid and shows it is <b>less noisy and a better short-term predictor</b> than the mid or the simple weighted mid, with volume imbalance playing the central role.</span></p>
+  <div class="formula">I = (V_b − V_a)/(V_b + V_a) ∈ [−1,1];   P_micro = lim E[ mid_{t+τ} | imbalance, spread ]  (Stoikov)</div>
+  <p><span class="zh">把视角推到<b>深档（levels 2–10）</b>，盘口从一个数变成一条<b>价-量曲线</b>，可提取三组互补信息：其一，<b>累计失衡</b>——把多档的量加权（越深权重越小）合成一个综合失衡，比单看最优档更能解释价格冲击，且<b>多档信息一旦整合，跨资产 cross-impact 对同期冲击几乎不再有额外解释力</b><sup class="r">10,11</sup>；其二，<b>盘口形状</b>——价-量曲线的斜率（流动性弹性 / 冲击成本的倒数）、曲率与深度集中度，斜率越陡意味着冲击越小、趋势越易延续；其三，<b>"墙"与隐藏流动性</b>——异常大的深档作为短期支撑/阻力，关键不在其存在而在其被<b>消耗还是撤离</b>。一个稳健的中期状态因子是对 40 维盘口向量做滚动 PCA，用主成分的<b>变化速度</b>刻画盘口整体形变方向（盘口"形变动量"），它比任一单档失衡更平滑。</span><span class="en">Pushing to the <b>deep book (levels 2–10)</b>, the book turns from one number into a <b>price–size curve</b>, yielding three complementary pieces. First, <b>cumulative imbalance</b> — a depth-weighted (decaying with level) integrated imbalance that explains price impact better than the top level alone, and once multi-level information is integrated, <b>cross-asset cross-impact adds almost no further explanatory power for contemporaneous impact</b>.<sup class="r">10,11</sup> Second, <b>book shape</b> — the slope of the price–size curve (liquidity elasticity / inverse impact cost), its curvature and depth concentration; a steeper slope means lower impact and trends that extend more easily. Third, <b>"walls" and hidden liquidity</b> — anomalously large deep levels as transient support/resistance, where what matters is not their presence but whether they get <b>consumed vs pulled</b>. A robust medium-horizon state factor is a rolling PCA of the 40-dim book vector whose component <b>velocities</b> encode how the whole book is deforming (book "deformation momentum") — steadier than any single-level imbalance.</span></p>
+
+  <h4 style="font-size:17.5px;margin-top:22px"><span class="zh">订单流与冲击信号 · Order-flow &amp; impact</span><span class="en">Order-flow &amp; impact signals</span></h4>
+  <p><span class="zh">流类的核心是 <b>Order-Flow Imbalance（OFI）</b>，由 Cont、Kukanov &amp; Stoikov<sup class="r">4</sup> 提出：只看最优档<b>队列的增量</b>，把"价格抬升或挂单增加"记为净买、"价格压低或撤单"记为净卖，逐事件累加。它的威力在于一条<b>稳健的线性关系</b>——短窗价格变化 ≈ OFI × (1/市场深度)，跨股、跨时间尺度、去季节性后都成立，并由标度论给出成交量-价格的"平方根律"；更重要的是，OFI 与价格的关系<b>比成交量-价格关系更干净、更稳</b><sup class="r">4</sup>。把 OFI 推广到多档（按档加权求和）即<b>integrated/multi-level OFI</b>，解释力进一步提升<sup class="r">10,11</sup>。与之并列的是 <b>trade-flow imbalance / 带符号成交量</b>（消息流自带 aggressor 方向，无需 Lee-Ready 推断）与 <b>Kyle's λ</b>——把价格变化对带符号成交量回归的斜率，作为<b>冲击系数 / 逆选择强度</b>的度量<sup class="r">16</sup>。</span><span class="en">The core flow signal is <b>Order-Flow Imbalance (OFI)</b>, introduced by Cont, Kukanov &amp; Stoikov:<sup class="r">4</sup> from the <b>increments of the best-quote queues</b>, count "price-up or size-add" as net buying and "price-down or cancel" as net selling, accumulated event by event. Its power lies in a <b>robust linear law</b> — short-window price change ≈ OFI × (1/market depth) — that holds across stocks, time scales and after de-seasonalising, and yields the "square-root" volume–price law via a scaling argument; crucially, the OFI–price relation is <b>cleaner and steadier than the volume–price one</b>.<sup class="r">4</sup> Generalising OFI across levels (a level-weighted sum) gives <b>integrated / multi-level OFI</b>, raising explanatory power further.<sup class="r">10,11</sup> Alongside it sit <b>trade-flow imbalance / signed volume</b> (the message stream gives the aggressor side directly, no Lee-Ready needed) and <b>Kyle's λ</b> — the slope of price change regressed on signed volume, a measure of the <b>impact coefficient / adverse selection</b>.<sup class="r">16</sup></span></p>
+  <div class="formula">e_n = ΔV_b·𝟙[P_b ≥ P_b^{prev}] − ΔV_a·𝟙[P_a ≤ P_a^{prev}];   OFI = Σ_n e_n;   Δmid ≈ (1/D)·OFI</div>
+  <p><span class="zh">流类信号有一条必须内化的<b>统计事实</b>：带符号订单流具有<b>长记忆</b>，其符号自相关按幂律 <code>C(n)~n^(−γ), γ∈[0.4,0.7]</code> 缓慢衰减，主要源于大单的<b>拆单执行</b>（Lillo-Farmer；Bouchaud 等）<sup class="r">2</sup>。这带来一个看似矛盾的事实：订单流高度可预测，价格却近乎鞅。<b>传播子（propagator）模型</b>用"<b>暂时性、随时间衰减的冲击</b>"把二者调和——每笔流推动价格但其冲击随后部分回撤<sup class="r">2</sup>；Hasbrouck<sup class="r">1</sup> 的 trade-quote VAR 则把单笔成交的<b>永久（私有信息）与暂时（流动性）冲击</b>分离。这给特征工程两条直接指令：(a) 必须编码<b>衰减/记忆</b>（EWMA 多半衰期、Hawkes 核）；(b) 区分<b>永久 vs 暂时</b>冲击比单看瞬时冲击更有预测价值。深度学习的证据收口于同一处：在 LOB 上，<b>训练于（平稳化的）订单流的模型显著优于直接喂原始盘口的模型</b>，且存在跨股<b>普适</b>的价格形成机制<sup class="r">8,9,11</sup>。</span><span class="en">Flow signals carry one <b>statistical fact</b> that must be internalised: signed order flow has <b>long memory</b>, its sign autocorrelation decaying as a power law <code>C(n)~n^(−γ), γ∈[0.4,0.7]</code>, driven mainly by the <b>order-splitting</b> of large parents (Lillo-Farmer; Bouchaud et al.).<sup class="r">2</sup> This produces an apparent paradox — order flow is highly predictable yet prices are near-martingales. The <b>propagator model</b> reconciles them with <b>transient, time-decaying impact</b>: each unit of flow pushes price but its impact partly reverts.<sup class="r">2</sup> Hasbrouck's<sup class="r">1</sup> trade–quote VAR separates a trade's <b>permanent (private-information) from transient (liquidity)</b> impact. This gives feature engineering two instructions: (a) <b>decay/memory must be encoded</b> (multi-half-life EWMA, Hawkes kernels); (b) splitting <b>permanent vs transient</b> impact is more predictive than the instantaneous impact alone. The deep-learning evidence converges: on the LOB, <b>models trained on (stationarised) order flow significantly outperform those fed the raw book</b>, and a <b>universal</b>, cross-stock price-formation mechanism exists.<sup class="r">8,9,11</sup></span></p>
+
+  <h4 style="font-size:17.5px;margin-top:22px"><span class="zh">事件动力学与消息类型分解 · Event dynamics &amp; message decomposition</span><span class="en">Event dynamics &amp; message decomposition</span></h4>
+  <p><span class="zh">把消息流看成<b>多元点过程</b>，最自然的工具是 <b>Hawkes 自激过程</b><sup class="r">5</sup>：强度 <code>λ(t)=μ+Σ_i φ(t−t_i)</code>，过去事件抬升未来事件的到达率，天然刻画订单流的<b>簇发</b>与<b>自激/互激</b>（买单激发买单、撤单激发成交）。拟合得到的瞬时强度与分支比是"订单流加速度"特征——强度骤升常先于趋势。而 trade / add / cancel 三类消息<b>信息含量截然不同</b>，必须分开处理：<b>成交（trade）</b>是付了价差的知情流，最具信息量，应按 aggressor 定号、按规模分桶（大单更知情）、并区分其冲击的永久与暂时部分；<b>挂单（add）</b>是流动性供给，近最优档的挂单可能是真实意图，也可能是<b>幌骗（spoofing）</b>，需区分"挂上即撤"与"留存被成交"；<b>撤单（cancel）</b>是流动性收回，高撤单率意味着<b>闪现流动性 / 毒性</b>，其<b>位置</b>（最优 vs 深档）与<b>时机</b>是关键。三者的<b>交互</b>往往比各自计数更有信号：<b>cancel→trade</b> 同向序列是"动量点火"，<b>add-near-touch 后被吃</b>是知情挂单，成交与同向 add/cancel 的<b>领先-滞后</b>结构则编码了做市商的反应。建议用消息<b>序列模式</b>（n-gram 或小型序列模型）而非单纯计数来捕捉这些交互。</span><span class="en">Viewing the message stream as a <b>multivariate point process</b>, the natural tool is the <b>Hawkes self-exciting process</b>:<sup class="r">5</sup> the intensity <code>λ(t)=μ+Σ_i φ(t−t_i)</code> lets past events raise the arrival rate of future ones, capturing the <b>clustering</b> and <b>self-/cross-excitation</b> of order flow (buys exciting buys, cancels exciting trades). The fitted instantaneous intensity and branching ratio are "order-flow acceleration" features — intensity bursts often precede trends. The three message types <b>carry very different information</b> and must be treated separately. <b>Trades</b> are informed flow that paid the spread, the most informative: sign by aggressor, bucket by size (large = more informed), and split permanent vs transient impact. <b>Adds</b> are liquidity provision; near-touch adds can be genuine intent or <b>spoofing</b>, so separate "add-then-cancel" from "rests and gets filled". <b>Cancels</b> are liquidity withdrawal; a high cancel rate means <b>fleeting liquidity / toxicity</b>, and the <b>location</b> (touch vs deep) and <b>timing</b> are decisive. Their <b>interactions</b> often carry more signal than the counts: a same-side <b>cancel→trade</b> sequence is "momentum ignition", a <b>near-touch add that then gets hit</b> is informed posting, and the <b>lead–lag</b> between trades and same-side add/cancel encodes the market-maker's reaction. I would capture these with message <b>sequence patterns</b> (n-grams or a small sequence model) rather than plain counts.</span></p>
+
+  <h3 id="t2-pipe"><span class="sn">5.2</span>From ticks to features: the engineering pipeline</h3>
+  <p><span class="zh">把不规则的逐笔流变成<b>定长特征向量</b>，是把上述信号真正喂进模型的桥梁，四个环节缺一不可。<b>双轨聚合</b>：短窗用<b>事件时间</b>（每 N 个消息/成交一格）以适应到达率的剧烈变化、避免空窗稀释——这也是 VPIN 用"成交量时间"而非时钟时间的原因<sup class="r">3</sup>；长窗用<b>时钟时间</b>（1/5/30 分钟）以对齐 30 分钟标签。<b>多尺度期限结构</b>：每个原始信号都做多半衰期 EWMA（5s/30s/2min/10min），其<b>快慢两端之差</b>本身就是动量/反转信号。<b>平稳化</b>：一律用<b>增量 / 比值 / 无量纲失衡</b>而非价格水平，价格用 mid 或 microprice 的差分而非对数收益以更好控制不同尺度的幅度——"用订单流的平稳化输入"正是大样本上取得 SOTA 的关键<sup class="r">11,12</sup>。<b>归一化</b>：先做<b>滚动时序 z</b>（按当只股票近 ~5 日窗口）以剔除日内/制度漂移，多标的时再叠加<b>截面 z</b>；静态全样本归一化在强非平稳的 LOB 上是已知的坑<sup class="r">12</sup>。<b>标签</b>：用 mid/microprice 的<b>多窗平均前向收益</b>降噪（避免 bid-ask bounce），或用 López de Prado 的 triple-barrier 标签把"先到止盈还是止损"编码进监督信号<sup class="r">13</sup>。</span><span class="en">Turning the irregular tick stream into a <b>fixed-length feature vector</b> is the bridge that actually feeds the signals above into a model, and four steps are non-negotiable. <b>Dual-track aggregation</b>: short windows in <b>event time</b> (one bucket per N messages/trades) to absorb wildly varying arrival rates and avoid empty-window dilution — the same reason VPIN runs in "volume time" rather than clock time;<sup class="r">3</sup> long windows in <b>clock time</b> (1/5/30 min) to align with the 30-minute label. <b>Multi-scale term structure</b>: every primitive gets multi-half-life EWMA (5s/30s/2min/10min), whose <b>fast-minus-slow</b> difference is itself a momentum/reversal signal. <b>Stationarisation</b>: always use <b>increments / ratios / dimensionless imbalances</b> rather than levels, and price as differences of mid or microprice rather than log-returns for better amplitude control — "stationarised order-flow inputs" is exactly what delivered state-of-the-art accuracy at scale.<sup class="r">11,12</sup> <b>Normalisation</b>: first a <b>rolling time-series z</b> (per stock, ~5-day trailing window) to strip intraday/regime drift, then a <b>cross-sectional z</b> when multiple names exist; static whole-sample normalisation is a known pitfall on the strongly non-stationary LOB.<sup class="r">12</sup> <b>Labelling</b>: denoise with a <b>multi-window-averaged forward return</b> of mid/microprice (avoiding bid-ask bounce), or use López de Prado's triple-barrier label to encode "take-profit vs stop-loss first" into the supervision.<sup class="r">13</sup></span></p>
+
+  <h3 id="t2-valid"><span class="sn">5.3</span>Practical concerns &amp; validation</h3>
+  <p><span class="zh"><b>一条容易被低估、却很增值的设计经验：很多因子在"第一层定义"之后，值得做进一步的内部细分再分别成因子。</b>常见的细分维度有——<b>按规模分大小单</b>（大单更知情，单独算大单 OFI / 大单成交失衡，往往比混合口径更干净）；<b>结合 aggressive order（主动单）再区分</b>（主动买/卖 vs 被动挂撤分开统计，主动成交流的毒性与冲击都更高）；<b>对一阶因子及其变化规律做二次方向回归</b>（用基础因子 + 其动态/残差，对方向再做一次回归或门控，得到条件化、去共线的二阶因子）；以及——<b>按 session 分时段</b>：开盘 / 午盘 / 收盘 / 隔夜等不同 session 之间，因子的分布、量纲与有效性差异极大，必须分 session 单独设计、单独归一或单独调权，而不能一套参数走天下。这些细分会把一个基础因子"裂变"成一族条件化变体，常常每一支都比聚合口径更纯净；代价是<b>显著放大了多重检验的负担</b>——这正引出下面的验证纪律。</span><span class="en"><b>An easily under-rated but high-value design lesson: many factors deserve a further internal subdivision after their "first-level" definition, then built separately.</b> Common subdivision axes are — <b>by order/trade size (large vs small)</b> (large orders are more informed; a stand-alone large-order OFI / large-trade imbalance is often cleaner than the pooled measure); <b>combining with aggressive orders</b> (count aggressive buy/sell separately from passive add/cancel — aggressive flow is more toxic and higher-impact); <b>a secondary directional regression on a first-order factor and its dynamics</b> (regress or gate direction again on the base factor plus its change/residual, yielding a conditioned, de-collinearised second-order factor); and — <b>by session</b>: across open / midday / close / overnight sessions the distribution, scale and efficacy of a factor differ greatly, so each session needs its own design, its own normalisation or its own weighting, rather than one parameter set for all. These subdivisions "fission" a base factor into a family of conditioned variants, often each purer than the aggregate — at the cost of a <b>much larger multiple-testing burden</b>, which is exactly what the validation discipline below addresses.</span></p>
+  <p><span class="zh"><b>微观结构噪声</b>：标签用 mid/microprice 而非成交价，避免 bid-ask bounce，并对标签多窗平均降噪。<b>离群与非平稳</b>：winsorize + 稳健损失（Huber/L1，与 Task 1 一致）；按<b>日内时段</b>分制度归一并滚动重拟合，因为 LOB 在一天之内就有强季节性与制度切换<sup class="r">12</sup>。<b>防过拟合的验证</b>是重中之重：因 30 分钟标签<b>重叠</b>，必须用<b>前向、purged + embargoed</b> 的时序 CV，且 embargo ≥ 标签 horizon；用 daily IC 的<b>均值/标准差（IR）</b>与跨时段稳定性判优；当扫描大量信号（尤其是上面那种细分裂变出的因子族）时，用 <b>deflated Sharpe / 多重检验校正</b>把"运气"与"真信号"分开<sup class="r">13,14</sup>。判据延续 Task 1 的"稳健优先"门槛：只有在<b>多个时段、（若有）多只股票</b>都稳定的信号才保留。</span><span class="en"><b>Microstructure noise</b>: label off mid/microprice, not trade price, to avoid bid-ask bounce, and denoise the label with a multi-window average. <b>Outliers &amp; non-stationarity</b>: winsorise + robust loss (Huber/L1, as in Task 1); regime-normalise by <b>time-of-day</b> and rolling-refit, because the LOB has strong intraday seasonality and regime switches within a single day.<sup class="r">12</sup> <b>Leakage-safe validation</b> is paramount: because the 30-minute label <b>overlaps</b>, use <b>forward, purged + embargoed</b> time-series CV with an embargo ≥ the label horizon; judge by the <b>mean/std of daily IC (IR)</b> and cross-regime stability; and when scanning many signals (especially the fissioned factor families above), control luck-vs-signal with a <b>deflated Sharpe / multiple-testing correction</b>.<sup class="r">13,14</sup> The acceptance gate extends Task 1's "robustness-first" rule: keep only signals stable across <b>several sessions and (where available) names</b>.</span></p>
+  <div class="note"><span class="lab">Bridge to Task 1</span><span class="zh">这些 tick 级原语经事件/时钟双轨聚合、滚动 + 截面归一后，就变成与 Task 1 完全同构的定长特征向量，可直接复用本报告的 <b>LightGBM + 多任务 MLP + 时序 Transformer + 稳健等权 Ensemble</b> 流水线——把微观结构的领域知识装进同一套已验证、防泄漏的建模框架；开头那几条设计规律则是把这套领域知识<b>因子化、可复用化</b>的操作手册。</span><span class="en">After dual-track aggregation and rolling + cross-sectional normalisation, these tick primitives become fixed-length vectors isomorphic to Task 1 — so they drop straight into this report's <b>LightGBM + multi-task MLP + temporal Transformer + robust equal-weight Ensemble</b> pipeline, putting microstructure domain knowledge inside the same validated, leak-free modelling stack; the design rules at the top are the operating manual that makes that knowledge <b>factorised and reusable</b>.</span></div>
+
+  <div class="ref"><b>References (Task 2)</b>
+    <ol style="font-size:13px;margin:.3em 0">
+      <li>J. Hasbrouck. "Measuring the Information Content of Stock Trades." <i>Journal of Finance</i> 46(1), 179–207, 1991.</li>
+      <li>J.-P. Bouchaud, Y. Gefen, M. Potters, M. Wyart. "Fluctuations and response in financial markets: the subtle nature of 'random' price changes." <i>Quantitative Finance</i> 4(2), 176–190, 2004; and F. Lillo &amp; J. D. Farmer, "The long memory of the efficient market," 2004 (propagator / long-memory of order flow).</li>
+      <li>D. Easley, M. López de Prado, M. O'Hara. "Flow Toxicity and Liquidity in a High-Frequency World." <i>Review of Financial Studies</i> 25(5), 1457–1493, 2012 (VPIN).</li>
+      <li>R. Cont, A. Kukanov, S. Stoikov. "The Price Impact of Order Book Events." <i>Journal of Financial Econometrics</i> 12(1), 47–88, 2014 (OFI).</li>
+      <li>E. Bacry, I. Mastromatteo, J.-F. Muzy. "Hawkes Processes in Finance." <i>Market Microstructure and Liquidity</i> 1(1), 2015.</li>
+      <li>M. D. Gould, J. Bonart. "Queue Imbalance as a One-Tick-Ahead Price Predictor in a Limit Order Book." <i>Market Microstructure and Liquidity</i> 2(2), 2016.</li>
+      <li>S. Stoikov. "The micro-price: a high-frequency estimator of future prices." <i>Quantitative Finance</i> 18(12), 1959–1966, 2018.</li>
+      <li>J. Sirignano, R. Cont. "Universal features of price formation in financial markets: perspectives from Deep Learning." <i>Quantitative Finance</i> 19(9), 1449–1459, 2019.</li>
+      <li>Z. Zhang, S. Zohren, S. Roberts. "DeepLOB: Deep Convolutional Neural Networks for Limit Order Books." <i>IEEE Trans. Signal Processing</i> 67(11), 3001–3012, 2019.</li>
+      <li>K. Xu, M. D. Gould, S. D. Howison. "Multi-Level Order-Flow Imbalance in a Limit Order Book." <i>Market Microstructure and Liquidity</i>, 2019.</li>
+      <li>R. Cont, M. Cucuringu, C. Zhang. "Cross-impact of order flow imbalance in equity markets." <i>Quantitative Finance</i> 23(10), 2023 (multi-level / integrated OFI).</li>
+      <li>P. Kolm, J. Turiel, N. Westray. "Deep order flow imbalance: Extracting alpha at multiple horizons from the limit order book." <i>Mathematical Finance</i> 33(4), 1044–1081, 2023.</li>
+      <li>M. López de Prado. <i>Advances in Financial Machine Learning.</i> Wiley, 2018 (triple-barrier labelling, meta-labelling, purged/embargoed CV).</li>
+      <li>D. Bailey, M. López de Prado. "The Deflated Sharpe Ratio: Correcting for Selection Bias, Backtest Overfitting and Non-Normality." <i>Journal of Portfolio Management</i> 40(5), 2014.</li>
+      <li>A. Tsantekidis et al. / A. Ntakaris et al. "Benchmark dataset (FI-2010) and CNN/LSTM models for mid-price prediction from the LOB," 2017–2018.</li>
+      <li>A. Kyle. "Continuous Auctions and Insider Trading." <i>Econometrica</i> 53(6), 1315–1335, 1985 (Kyle's λ).</li>
+    </ol>
+  </div>
+</section>
+
+
+</main>
+
+<footer>
+  <div class="wrap" style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap">
+    <span><span class="zh">感谢 Engineering Gates 团队给予的考虑与机会。</span><span class="en">Thank you for the opportunity to be considered by the team.</span></span>
+  </div>
+</footer>
+
+<script>
+  function setLang(l){
+    document.body.className = 'lang-' + l;
+    document.getElementById('btn-zh').classList.toggle('active', l==='zh');
+    document.getElementById('btn-en').classList.toggle('active', l==='en');
+    document.documentElement.lang = (l==='zh') ? 'zh' : 'en';
+    try{ localStorage.setItem('eg_model_lang', l); }catch(e){}
+  }
+  (function(){
+    var saved='en';
+    try{ saved = localStorage.getItem('eg_model_lang') || 'en'; }catch(e){}
+    setLang(saved);
+  })();
+</script>
+</body>
+</html>

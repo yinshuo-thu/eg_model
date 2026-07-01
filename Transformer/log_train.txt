@@ -1,0 +1,143 @@
+[xfmr] building dense panel, dev=cuda
+[xfmr] panel (1333, 1259, 213) (1.43 GB)
+[xfmr] samples: train 971,757 valid 159,960 all 1,636,924
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:136: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=DEV == "cuda")
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed0 ep1 valid IC 0.04254
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed0 ep2 valid IC 0.04780
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed0 ep3 valid IC 0.05448
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed0 ep4 valid IC 0.05662
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed0 ep5 valid IC 0.05450
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed0 ep6 valid IC 0.05614
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed0 ep7 valid IC 0.04669
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed0 ep8 valid IC 0.04925
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed0 ep9 valid IC 0.04907
+   seed0: best valid IC 0.05662
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:136: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=DEV == "cuda")
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed1 ep1 valid IC 0.03842
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed1 ep2 valid IC 0.05188
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed1 ep3 valid IC 0.04391
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed1 ep4 valid IC 0.05618
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed1 ep5 valid IC 0.05502
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed1 ep6 valid IC 0.05822
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed1 ep7 valid IC 0.05491
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed1 ep8 valid IC 0.05039
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed1 ep9 valid IC 0.05022
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed1 ep10 valid IC 0.04229
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed1 ep11 valid IC 0.03956
+   seed1: best valid IC 0.05822
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:136: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=DEV == "cuda")
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed2 ep1 valid IC 0.03658
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed2 ep2 valid IC 0.05010
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed2 ep3 valid IC 0.05789
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed2 ep4 valid IC 0.05395
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed2 ep5 valid IC 0.05836
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed2 ep6 valid IC 0.05550
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed2 ep7 valid IC 0.05356
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed2 ep8 valid IC 0.05464
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed2 ep9 valid IC 0.04815
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed2 ep10 valid IC 0.04283
+   seed2: best valid IC 0.05836
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:136: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=DEV == "cuda")
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed3 ep1 valid IC 0.04487
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed3 ep2 valid IC 0.04877
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed3 ep3 valid IC 0.05542
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed3 ep4 valid IC 0.05503
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed3 ep5 valid IC 0.05378
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed3 ep6 valid IC 0.05435
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed3 ep7 valid IC 0.06093
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed3 ep8 valid IC 0.04682
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed3 ep9 valid IC 0.04588
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed3 ep10 valid IC 0.04303
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed3 ep11 valid IC 0.03742
+/root/autodl-tmp/eg_model/Transformer/scripts/run_transformer.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=DEV == "cuda"):
+   seed3 ep12 valid IC 0.03911
+   seed3: best valid IC 0.06093
+  transformer            valid IC 0.06219 IR 0.94 | test IC 0.05969 IR 0.91 spear 0.05827 pos 0.83
+[xfmr] done in 482s

@@ -1,0 +1,11 @@
+[mlp] 1,677,896 rows, 213 feats, dev=cuda
+/root/autodl-tmp/eg_model/ML_single/scripts/run_mlp.py:57: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:203.)
+  X = torch.from_numpy(df[fcols].to_numpy("float32"))
+   seed 0: best valid IC 0.05987 (ep stop)
+   seed 1: best valid IC 0.06053 (ep stop)
+   seed 2: best valid IC 0.06003 (ep stop)
+   seed 3: best valid IC 0.05765 (ep stop)
+   seed 4: best valid IC 0.06111 (ep stop)
+   seed 5: best valid IC 0.05990 (ep stop)
+  mlp                    valid IC 0.06495 IR 0.94 | test IC 0.05647 IR 0.87 spear 0.05627 pos 0.81
+[mlp] done in 94s
