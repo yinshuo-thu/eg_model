@@ -13,6 +13,13 @@ Transformer/weights/
 **/weights/*.pth
 **/*.ckpt
 
+# ---- submit package weights: SMALL, deployable, MUST be committed ----
+!submit/weights/
+!submit/weights/*.pt
+!submit/weights/*.pth
+!submit/weights/*.txt
+!submit/weights/*.json
+
 # ---- python / misc ----
 __pycache__/
 *.pyc
