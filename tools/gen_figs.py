@@ -31,7 +31,7 @@ NAMES = {"ridge": "Ridge", "elasticnet": "ElasticNet", "lightgbm_l1": "LightGBM-
          "mlp": "MLP", "transformer": "Transformer", "ensemble_opt": "Ensemble",
          "ensemble_equal": "Ensemble (eq)", "y_hat0": "y_hat0 (baseline)"}
 ORDER = ["ridge", "elasticnet", "lightgbm_dart", "lightgbm_huber", "lightgbm_l1",
-         "transformer", "mlp", "ensemble_equal", "ensemble_opt"]
+         "mlp", "ensemble_opt", "transformer"]
 
 
 def save(fig, name):
@@ -90,7 +90,7 @@ def main():
         return d.groupby("day").apply(lambda g: g.pred.corr(g.y))
 
     # ---- fig2: stacked daily IC over the test period — Ensemble / y_hat0 / Transformer ----
-    stack = [(ens, C["ensemble_opt"]), ("y_hat0", C["y_hat0"]), ("transformer", C["transformer"])]
+    stack = [(ens, C["ensemble_opt"]), ("transformer", C["transformer"])]
     stack = [(m, c) for m, c in stack if m in M]
     fig, axes = plt.subplots(len(stack), 1, figsize=(11, 2.5 * len(stack)), sharex=True)
     if len(stack) == 1: axes = [axes]
@@ -110,7 +110,7 @@ def main():
     save(fig, "fig2_daily_ic.png")
 
     # ---- fig3: quintile (5-bucket) returns + long-short PnL — y_hat0 / Transformer / Ensemble ----
-    pnl_models = [(m, C.get(m, "#888")) for m in ["y_hat0", "transformer", ens] if m in M]
+    pnl_models = [(m, C.get(m, "#888")) for m in ["transformer", ens] if m in M]
     fig, ax = plt.subplots(1, 2, figsize=(12, 4.2))
     width = 0.8 / len(pnl_models)
     for i, (m, col) in enumerate(pnl_models):
@@ -204,7 +204,6 @@ def main():
             "fig7_ml_compare.png", "Blocked daily IC (test)", "20-bucket monotonicity (test)")
     if "ensemble_opt" in M:
         final_specs = [("LightGBM", C["lightgbm_l1"], "lightgbm"), ("Transformer", C["transformer"], "transformer"), ("Ensemble", C["ensemble_opt"], "ensemble_opt")]
-        if "y_hat0" in M: final_specs = [("y_hat0 (baseline)", C["y_hat0"], "y_hat0")] + final_specs
         compare(final_specs,
                 "fig8_final_compare.png", "Blocked daily IC (test)", "20-bucket monotonicity (test)")
 
