@@ -1,0 +1,3681 @@
+{
+  "n_ideas": 120,
+  "n_variants": 125,
+  "n_kept_ideas": 108,
+  "n_final_cols": 111,
+  "corr_thresh": 0.8,
+  "kept_ideas": [
+    "multi_mark_common_trend",
+    "reversal",
+    "group_rank_reversal",
+    "reversal_after_volume_spike",
+    "range_asymmetry",
+    "reversal_consistency",
+    "bollinger_position",
+    "open_vwap_gap",
+    "turnover_illiquidity_spread",
+    "toxicity_weighted_momentum",
+    "impact_decay",
+    "attention_shift_trend",
+    "realized_vol_term_spread",
+    "max_range_lottery",
+    "close_vwap_pressure",
+    "amihud_trend",
+    "range_to_gap_ratio",
+    "group_relative_volume",
+    "reversal_risk_adj",
+    "relative_strength_vs_group",
+    "overnight_intraday_divergence",
+    "vol_regime_reversal",
+    "volume_rank_momentum",
+    "overnight_drift_persistence",
+    "kyle_lambda",
+    "overnight_beta",
+    "orthogonal_momentum_x07",
+    "market_beta",
+    "atr_pct",
+    "chaikin_volatility",
+    "range_skew",
+    "ofi_lite",
+    "range_expansion_breakout",
+    "upside_vol",
+    "turnover_zscore_extreme",
+    "overshoot_ratio",
+    "return_kurtosis",
+    "vwap_dev_momentum",
+    "illiquidity_x_momentum",
+    "amihud_vol_ratio",
+    "signed_range_trend",
+    "volume_shock_persistence_ac",
+    "trend_efficiency",
+    "trend_slope",
+    "volume_price_corr",
+    "volume_acceleration",
+    "parkinson_vol",
+    "momentum_term_spread",
+    "vwap_efficiency",
+    "intraday_range",
+    "liquidity_timing",
+    "amihud_illiquidity",
+    "momentum_x_efficiency",
+    "hawkes_intensity_proxy",
+    "mark_spread_trend",
+    "price_vol_elasticity",
+    "jump_frequency",
+    "permanent_impact_proxy",
+    "autocorr_return",
+    "multi_mark_divergence",
+    "sign_intensity_decomp",
+    "range_pct",
+    "choppiness_index",
+    "efficiency_ratio",
+    "gap_range_beta",
+    "coskewness",
+    "days_since_high",
+    "return_skew",
+    "idio_vol",
+    "volume_momentum",
+    "tick_efficiency",
+    "downside_vol",
+    "volume_volatility_relation",
+    "beta_momentum",
+    "distance_from_low",
+    "turnover_persistence_ewma",
+    "volume_weighted_reversal",
+    "overnight_gap",
+    "group_te_volume",
+    "volume_price_trend",
+    "open_close_vwap_triangle",
+    "worst_return",
+    "cross_mark_lead_lag",
+    "vol_of_vol",
+    "divergence_indicator",
+    "volume_trend_shock",
+    "best_return",
+    "reversal_asymmetry",
+    "liquidity_tier_reversal",
+    "reversal_x_beta",
+    "gap_fade",
+    "idio_reversal_pca",
+    "illiquidity_momentum",
+    "volatility_clustering_ac",
+    "close_location_value",
+    "obv_trend",
+    "gap_size_trend",
+    "win_rate",
+    "amihud_vol_regime_interaction",
+    "compression_expansion",
+    "liquidity_beta",
+    "group_volume_dispersion",
+    "vwap_reversion_speed",
+    "beta_asym_reversal",
+    "vpin_proxy",
+    "money_flow_index",
+    "liquidity_regime_momentum",
+    "volume_stability_cv"
+  ],
+  "dropped": [
+    {
+      "idea": "momentum",
+      "collides_with": "toxicity_weighted_momentum",
+      "abs_corr": 0.995
+    },
+    {
+      "idea": "book_pressure_proxy",
+      "collides_with": "range_asymmetry",
+      "abs_corr": 0.839
+    },
+    {
+      "idea": "intraday_return",
+      "collides_with": "open_vwap_gap",
+      "abs_corr": 0.913
+    },
+    {
+      "idea": "idio_reversal_beta",
+      "collides_with": "reversal_risk_adj",
+      "abs_corr": 0.843
+    },
+    {
+      "idea": "rsi_like",
+      "collides_with": "bollinger_position",
+      "abs_corr": 0.834
+    },
+    {
+      "idea": "signed_amihud",
+      "collides_with": "reversal_risk_adj",
+      "abs_corr": 0.845
+    },
+    {
+      "idea": "liquidity_adj_range",
+      "collides_with": "intraday_range",
+      "abs_corr": 0.844
+    },
+    {
+      "idea": "ma_cross",
+      "collides_with": "permanent_impact_proxy",
+      "abs_corr": 0.801
+    },
+    {
+      "idea": "group_relative_vol",
+      "collides_with": "best_return",
+      "abs_corr": 0.811
+    },
+    {
+      "idea": "range_meanreversion",
+      "collides_with": "intraday_range",
+      "abs_corr": 0.891
+    },
+    {
+      "idea": "price_acceleration",
+      "collides_with": "idio_reversal_pca",
+      "abs_corr": 0.806
+    },
+    {
+      "idea": "vol_illiquidity_regime",
+      "collides_with": "amihud_vol_regime_interaction",
+      "abs_corr": 1.0
+    }
+  ],
+  "ledger": [
+    {
+      "idea": "reversal",
+      "variant": "k1",
+      "category": "reversal",
+      "col": "reversal_k1",
+      "zh": "\u77ed\u5468\u671f\u53cd\u8f6c\uff1a\u8fc7\u5ea6\u53cd\u5e94\u540e\u4ef7\u683c\u56de\u5410",
+      "en": "short-horizon reversal: overreaction mean-reverts",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00246,
+          "valid_ic": 0.00525
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00479,
+          "valid_ic": 0.01122
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00443,
+          "valid_ic": 0.00958
+        }
+      ]
+    },
+    {
+      "idea": "reversal",
+      "variant": "k2",
+      "category": "reversal",
+      "col": "reversal_k2",
+      "zh": "\u77ed\u5468\u671f\u53cd\u8f6c\uff1a\u8fc7\u5ea6\u53cd\u5e94\u540e\u4ef7\u683c\u56de\u5410",
+      "en": "short-horizon reversal: overreaction mean-reverts",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00633,
+          "valid_ic": 0.01129
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00753,
+          "valid_ic": 0.01446
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00627,
+          "valid_ic": 0.00898
+        }
+      ]
+    },
+    {
+      "idea": "reversal",
+      "variant": "k3",
+      "category": "reversal",
+      "col": "reversal_k3",
+      "zh": "\u77ed\u5468\u671f\u53cd\u8f6c\uff1a\u8fc7\u5ea6\u53cd\u5e94\u540e\u4ef7\u683c\u56de\u5410",
+      "en": "short-horizon reversal: overreaction mean-reverts",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00838,
+          "valid_ic": 0.00817
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.0096,
+          "valid_ic": 0.0104
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00818,
+          "valid_ic": 0.00539
+        }
+      ]
+    },
+    {
+      "idea": "reversal",
+      "variant": "k5",
+      "category": "reversal",
+      "col": "reversal_k5",
+      "zh": "\u77ed\u5468\u671f\u53cd\u8f6c\uff1a\u8fc7\u5ea6\u53cd\u5e94\u540e\u4ef7\u683c\u56de\u5410",
+      "en": "short-horizon reversal: overreaction mean-reverts",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.01143,
+          "valid_ic": 0.00882
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.01156,
+          "valid_ic": 0.00991
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00823,
+          "valid_ic": 0.01403
+        }
+      ]
+    },
+    {
+      "idea": "momentum",
+      "variant": "k10",
+      "category": "reversal",
+      "col": "momentum_k10",
+      "zh": "\u4e2d\u957f\u5468\u671f\u52a8\u91cf\uff1a\u8d8b\u52bf\u5ef6\u7eed",
+      "en": "medium/long-horizon momentum: trend continuation",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00591,
+          "valid_ic": 0.01014
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00595,
+          "valid_ic": 0.00942
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00458,
+          "valid_ic": 0.00948
+        }
+      ]
+    },
+    {
+      "idea": "momentum",
+      "variant": "k20",
+      "category": "reversal",
+      "col": "momentum_k20",
+      "zh": "\u4e2d\u957f\u5468\u671f\u52a8\u91cf\uff1a\u8d8b\u52bf\u5ef6\u7eed",
+      "en": "medium/long-horizon momentum: trend continuation",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00289,
+          "valid_ic": 0.00814
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00184,
+          "valid_ic": 0.00759
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00131,
+          "valid_ic": 0.00696
+        }
+      ]
+    },
+    {
+      "idea": "momentum",
+      "variant": "k40",
+      "category": "reversal",
+      "col": "momentum_k40",
+      "zh": "\u4e2d\u957f\u5468\u671f\u52a8\u91cf\uff1a\u8d8b\u52bf\u5ef6\u7eed",
+      "en": "medium/long-horizon momentum: trend continuation",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00127,
+          "valid_ic": 0.01346
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00054,
+          "valid_ic": 0.01314
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": -0.00038,
+          "valid_ic": 0.01026
+        }
+      ]
+    },
+    {
+      "idea": "momentum_term_spread",
+      "variant": null,
+      "category": "reversal",
+      "col": "momentum_term_spread",
+      "zh": "\u52a8\u91cf\u671f\u9650\u5229\u5dee\uff1a\u957f\u52a8\u91cf\u51cf\u77ed\u52a8\u91cf\uff0c\u6355\u6349\u52a0\u901f/\u51cf\u901f",
+      "en": "momentum term spread: long minus short momentum captures accel/decel",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00237,
+          "valid_ic": -0.00293
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00323,
+          "valid_ic": -0.0021
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.0018,
+          "valid_ic": 4e-05
+        }
+      ]
+    },
+    {
+      "idea": "reversal_risk_adj",
+      "variant": null,
+      "category": "reversal",
+      "col": "reversal_risk_adj",
+      "zh": "\u98ce\u9669\u8c03\u6574\u53cd\u8f6c\uff1a\u53cd\u8f6c\u4fe1\u53f7\u9664\u4ee5\u77ed\u671f\u6ce2\u52a8\u7387\uff08\u7c7b\u590f\u666e\uff09",
+      "en": "risk-adjusted reversal: reversal scaled by short-horizon vol (Sharpe-like)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00492,
+          "valid_ic": 0.01182
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00488,
+          "valid_ic": 0.01197
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00413,
+          "valid_ic": 0.0124
+        }
+      ]
+    },
+    {
+      "idea": "reversal_consistency",
+      "variant": null,
+      "category": "reversal",
+      "col": "reversal_consistency",
+      "zh": "\u53cd\u8f6c\u4e00\u81f4\u6027\uff1a\u7a97\u53e3\u5185\u4e0b\u8dcc\u5929\u6570\u5360\u6bd4",
+      "en": "reversal consistency: fraction of down-days in window",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00811,
+          "valid_ic": 0.00471
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00864,
+          "valid_ic": 0.00321
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00607,
+          "valid_ic": 0.00842
+        }
+      ]
+    },
+    {
+      "idea": "overnight_gap",
+      "variant": null,
+      "category": "reversal",
+      "col": "overnight_gap",
+      "zh": "\u9694\u591c\u8df3\u7a7a\uff1a\u9694\u591c\u6536\u76ca\u7684\u52a8\u91cf\u5206\u91cf",
+      "en": "overnight gap: the overnight-return momentum component",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00104,
+          "valid_ic": 0.02279
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00078,
+          "valid_ic": 0.02585
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": -0.00095,
+          "valid_ic": 0.01039
+        }
+      ]
+    },
+    {
+      "idea": "intraday_return",
+      "variant": null,
+      "category": "reversal",
+      "col": "intraday_return",
+      "zh": "\u65e5\u5185\u6536\u76ca\uff1a\u65e5\u5185\u90e8\u5206\u7684\u53cd\u8f6c\u5206\u91cf",
+      "en": "intraday return: the intraday-segment reversal component",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00323,
+          "valid_ic": 0.01661
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.0053,
+          "valid_ic": 0.02282
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00381,
+          "valid_ic": 0.01539
+        }
+      ]
+    },
+    {
+      "idea": "close_vwap_pressure",
+      "variant": null,
+      "category": "reversal",
+      "col": "close_vwap_pressure",
+      "zh": "\u6536\u76d8\u76f8\u5bf9VWAP\u538b\u529b\uff1a\u6536\u76d8\u4ef7\u504f\u79bb\u65e5\u5185\u5747\u4ef7",
+      "en": "close-vs-VWAP pressure: close deviation from intraday average price",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00185,
+          "valid_ic": -0.02006
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00275,
+          "valid_ic": -0.02307
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00435,
+          "valid_ic": -0.00949
+        }
+      ]
+    },
+    {
+      "idea": "open_vwap_gap",
+      "variant": null,
+      "category": "reversal",
+      "col": "open_vwap_gap",
+      "zh": "\u5f00\u76d8\u76f8\u5bf9VWAP\u7f3a\u53e3",
+      "en": "open-vs-VWAP gap",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00409,
+          "valid_ic": 0.0117
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00685,
+          "valid_ic": 0.01684
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00577,
+          "valid_ic": 0.01359
+        }
+      ]
+    },
+    {
+      "idea": "vwap_dev_momentum",
+      "variant": null,
+      "category": "reversal",
+      "col": "vwap_dev_momentum",
+      "zh": "VWAP\u504f\u79bb\u7684\u52a8\u91cf\uff1aclose-vwap\u7f3a\u53e3\u76845\u65e5\u53d8\u5316",
+      "en": "VWAP-deviation momentum: 5-day change of the close-vwap gap",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00397,
+          "valid_ic": 0.01284
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00502,
+          "valid_ic": 0.01568
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00228,
+          "valid_ic": 0.00848
+        }
+      ]
+    },
+    {
+      "idea": "overnight_intraday_divergence",
+      "variant": null,
+      "category": "reversal",
+      "col": "overnight_intraday_divergence",
+      "zh": "\u9694\u591c/\u65e5\u5185\u80cc\u79bb\uff1a\u4e24\u7c7b\u6536\u76ca\u6eda\u52a8\u5747\u503c\u4e4b\u5dee",
+      "en": "overnight/intraday divergence: rolling-mean gap between the two return legs",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00821,
+          "valid_ic": 0.02072
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00988,
+          "valid_ic": 0.02169
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00402,
+          "valid_ic": 0.01541
+        }
+      ]
+    },
+    {
+      "idea": "price_acceleration",
+      "variant": null,
+      "category": "reversal",
+      "col": "price_acceleration",
+      "zh": "\u4ef7\u683c\u52a0\u901f\u5ea6\uff1a\u6536\u76ca\u7684\u4e00\u9636\u5dee\u5206",
+      "en": "price acceleration: first difference of daily return",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00192,
+          "valid_ic": 0.00464
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.0009,
+          "valid_ic": -0.00182
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00045,
+          "valid_ic": -0.00471
+        }
+      ]
+    },
+    {
+      "idea": "idio_reversal_beta",
+      "variant": null,
+      "category": "reversal",
+      "col": "idio_reversal_beta",
+      "zh": "\u7279\u8d28\u53cd\u8f6c\uff1a\u5254\u966460\u65e5\u6eda\u52a8\u5e02\u573abeta\u540e\u7684\u6b8b\u5dee\u53cd\u8f6c",
+      "en": "idiosyncratic reversal: reversal net of a 60-day rolling market beta",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00185,
+          "valid_ic": -0.00039
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00415,
+          "valid_ic": 0.00507
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00361,
+          "valid_ic": 0.00565
+        }
+      ]
+    },
+    {
+      "idea": "idio_reversal_pca",
+      "variant": null,
+      "category": "reversal",
+      "col": "idio_reversal_pca",
+      "zh": "\u7279\u8d28\u53cd\u8f6c(\u5171\u540c\u5206\u89e3)\uff1a5\u4e2a\u4ef7\u683c\u6807\u8bb0\u540c\u671f\u53d8\u52a8\u7684\u5171\u540c\u5206\u91cf\u4e4b\u5916\u7684close\u6b8b\u5dee",
+      "en": "idiosyncratic reversal (common/idio split): close move net of the 5-mark common component",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00119,
+          "valid_ic": -0.00216
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00131,
+          "valid_ic": -0.00706
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00055,
+          "valid_ic": -0.00746
+        }
+      ]
+    },
+    {
+      "idea": "group_rank_reversal",
+      "variant": null,
+      "category": "reversal",
+      "col": "group_rank_reversal",
+      "zh": "\u7ec4\u5185\u53cd\u8f6c\uff1a\u53cd\u8f6c\u4fe1\u53f7\u5728\u884c\u4e1ag\u5185\u90e8\u91cd\u65b0\u6392\u540d\u800c\u975e\u5168\u5e02\u573a",
+      "en": "within-group reversal: rank the reversal signal inside industry g, not the whole market",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00731,
+          "valid_ic": 0.00625
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.0074,
+          "valid_ic": 0.00653
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00767,
+          "valid_ic": 0.00564
+        }
+      ]
+    },
+    {
+      "idea": "orthogonal_momentum_x07",
+      "variant": null,
+      "category": "reversal",
+      "col": "orthogonal_momentum_x07",
+      "zh": "\u6b63\u4ea4\u52a8\u91cf\uff1a\u52a8\u91cf\u5bf9x_0..x_7\u53cd\u8f6c\u7c07\u505a\u622a\u9762\u56de\u5f52\u540e\u7684\u6b8b\u5dee",
+      "en": "orthogonalized momentum: momentum residualized against the x_0..x_7 reversal cluster",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00517,
+          "valid_ic": 0.00416
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00477,
+          "valid_ic": 0.0028
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00343,
+          "valid_ic": 0.00646
+        }
+      ]
+    },
+    {
+      "idea": "beta_asym_reversal",
+      "variant": null,
+      "category": "reversal",
+      "col": "beta_asym_reversal",
+      "zh": "\u975e\u5bf9\u79f0\u8d1d\u5854\u53cd\u8f6c\uff1a\u4e0b\u8dcc\u5e02\u573abeta\u9ad8\u4e8e\u4e0a\u6da8\u5e02\u573abeta\u7684\u540d\u5b57\u66f4\u5bb9\u6613\u53cd\u8f6c",
+      "en": "asymmetric-beta reversal: names with higher down-market than up-market beta revert more",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00157,
+          "valid_ic": -0.00529
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00145,
+          "valid_ic": -0.0022
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": -0.00027,
+          "valid_ic": -0.00028
+        }
+      ]
+    },
+    {
+      "idea": "intraday_range",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "intraday_range",
+      "zh": "\u65e5\u5185\u533a\u95f4\uff1aHigh-Low\u6ce2\u52a8\u5e45\u5ea6",
+      "en": "intraday range: high-low swing amplitude",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00275,
+          "valid_ic": -0.00317
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00275,
+          "valid_ic": -0.00317
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00177,
+          "valid_ic": -0.00367
+        }
+      ]
+    },
+    {
+      "idea": "range_pct",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "range_pct",
+      "zh": "\u76f8\u5bf9\u533a\u95f4\uff1a\u533a\u95f4\u5e45\u5ea6\u76f8\u5bf9\u4ef7\u683c\u6c34\u5e73\u5f52\u4e00",
+      "en": "relative range: range normalised by the price level",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00143,
+          "valid_ic": -0.00215
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00143,
+          "valid_ic": -0.00215
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00142,
+          "valid_ic": -0.00304
+        }
+      ]
+    },
+    {
+      "idea": "close_location_value",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "close_location_value",
+      "zh": "\u6536\u76d8\u4f4d\u7f6e\u503c\uff1a\u6536\u76d8\u4ef7\u5728\u65e5\u5185\u533a\u95f4\u4e2d\u7684\u4f4d\u7f6e(\u7c7b%K)",
+      "en": "close location value: close's position inside the day's range (Stochastic %K-like)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00019,
+          "valid_ic": 0.00049
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00019,
+          "valid_ic": 0.00049
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00046,
+          "valid_ic": 0.00169
+        }
+      ]
+    },
+    {
+      "idea": "parkinson_vol",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "parkinson_vol",
+      "zh": "Parkinson\u6ce2\u52a8\u7387\uff1a\u57fa\u4e8e\u533a\u95f4\u5e73\u65b9\u7684\u5df2\u5b9e\u73b0\u6ce2\u52a8\u7387\u4ee3\u7406",
+      "en": "Parkinson volatility: realised-vol proxy from squared range",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00211,
+          "valid_ic": 0.02043
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00211,
+          "valid_ic": 0.02043
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00187,
+          "valid_ic": 0.0092
+        }
+      ]
+    },
+    {
+      "idea": "return_skew",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "return_skew",
+      "zh": "\u6536\u76ca\u504f\u5ea6\uff1a20\u65e5\u6eda\u52a8\u504f\u5ea6\uff0c\u5f69\u7968/\u5c3e\u90e8\u504f\u597d\u6298\u4ef7",
+      "en": "return skew: 20-day rolling skew, lottery/tail-preference discount",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00052,
+          "valid_ic": -0.00339
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00052,
+          "valid_ic": -0.00339
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00126,
+          "valid_ic": -0.00253
+        }
+      ]
+    },
+    {
+      "idea": "return_kurtosis",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "return_kurtosis",
+      "zh": "\u6536\u76ca\u5cf0\u5ea6\uff1a20\u65e5\u6eda\u52a8\u5cf0\u5ea6\uff0c\u5c3e\u90e8\u98ce\u9669",
+      "en": "return kurtosis: 20-day rolling kurtosis, tail risk",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00243,
+          "valid_ic": -0.00157
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00243,
+          "valid_ic": -0.00157
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00229,
+          "valid_ic": -0.00316
+        }
+      ]
+    },
+    {
+      "idea": "downside_vol",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "downside_vol",
+      "zh": "\u4e0b\u884c\u6ce2\u52a8\u7387\uff1a\u4ec5\u7528\u4e0b\u8dcc\u65e5\u8ba1\u7b97\u7684\u6ce2\u52a8",
+      "en": "downside volatility: vol computed only from down-days",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00071,
+          "valid_ic": -0.00248
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00071,
+          "valid_ic": -0.00248
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00115,
+          "valid_ic": 0.00491
+        }
+      ]
+    },
+    {
+      "idea": "upside_vol",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "upside_vol",
+      "zh": "\u4e0a\u884c\u6ce2\u52a8\u7387\uff1a\u4ec5\u7528\u4e0a\u6da8\u65e5\u8ba1\u7b97\u7684\u6ce2\u52a8",
+      "en": "upside volatility: vol computed only from up-days",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00389,
+          "valid_ic": 0.01144
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00389,
+          "valid_ic": 0.01144
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.0026,
+          "valid_ic": 0.00674
+        }
+      ]
+    },
+    {
+      "idea": "vol_of_vol",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "vol_of_vol",
+      "zh": "\u6ce2\u52a8\u7684\u6ce2\u52a8\uff1a\u77ed\u671f\u6ce2\u52a8\u7387\u81ea\u8eab\u768420\u65e5\u6ce2\u52a8",
+      "en": "vol-of-vol: the 20-day volatility of the 10-day realised vol",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00127,
+          "valid_ic": 0.00688
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00127,
+          "valid_ic": 0.00688
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00073,
+          "valid_ic": -0.00077
+        }
+      ]
+    },
+    {
+      "idea": "max_range_lottery",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "max_range_lottery",
+      "zh": "MAX\u6548\u5e94\uff1a\u7a97\u53e3\u5185\u6700\u5927\u5355\u65e5\u533a\u95f4\uff0c\u5f69\u7968\u80a1\u6298\u4ef7",
+      "en": "MAX effect: the largest single-day range in the window, lottery discount",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00426,
+          "valid_ic": -0.01163
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00426,
+          "valid_ic": -0.01163
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.0044,
+          "valid_ic": -0.00442
+        }
+      ]
+    },
+    {
+      "idea": "worst_return",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "worst_return",
+      "zh": "\u6700\u5dee\u6536\u76ca\uff1a\u7a97\u53e3\u5185\u6700\u5dee\u5355\u65e5\u6536\u76ca",
+      "en": "worst return: the worst single-day return in the window",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00105,
+          "valid_ic": 0.00694
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00105,
+          "valid_ic": 0.00694
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00082,
+          "valid_ic": -0.00288
+        }
+      ]
+    },
+    {
+      "idea": "best_return",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "best_return",
+      "zh": "\u6700\u4f73\u6536\u76ca\uff1a\u7a97\u53e3\u5185\u6700\u4f73\u5355\u65e5\u6536\u76ca",
+      "en": "best return: the best single-day return in the window",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00157,
+          "valid_ic": 0.01536
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00157,
+          "valid_ic": 0.01536
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00065,
+          "valid_ic": 0.00574
+        }
+      ]
+    },
+    {
+      "idea": "atr_pct",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "atr_pct",
+      "zh": "\u76f8\u5bf9ATR\uff1a\u5e73\u5747\u771f\u5b9e\u6ce2\u5e45\u76f8\u5bf9\u4ef7\u683c\u6c34\u5e73",
+      "en": "relative ATR: average true range normalised by price level",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00285,
+          "valid_ic": -0.00485
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00285,
+          "valid_ic": -0.00485
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00305,
+          "valid_ic": -0.00271
+        }
+      ]
+    },
+    {
+      "idea": "range_skew",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "range_skew",
+      "zh": "\u533a\u95f4\u504f\u5ea6\uff1a\u65e5\u5185\u533a\u95f4\u7684\u6eda\u52a8\u504f\u5ea6",
+      "en": "range skew: rolling skew of the intraday range",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00403,
+          "valid_ic": 0.00218
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00403,
+          "valid_ic": 0.00218
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.003,
+          "valid_ic": -0.0012
+        }
+      ]
+    },
+    {
+      "idea": "compression_expansion",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "compression_expansion",
+      "zh": "\u6ce2\u52a8\u7387\u5236\u5ea6\uff1a\u77ed\u7a97\u533a\u95f4/\u957f\u7a97\u533a\u95f4\uff0c\u5e03\u6797\u5e26\u6536\u7a84-\u653e\u5bbd",
+      "en": "volatility regime: short/long range ratio, Bollinger squeeze-vs-expansion",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00052,
+          "valid_ic": -0.00131
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00052,
+          "valid_ic": -0.00131
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00041,
+          "valid_ic": -0.00095
+        }
+      ]
+    },
+    {
+      "idea": "jump_frequency",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "jump_frequency",
+      "zh": "\u8df3\u8dc3\u9891\u7387\uff1a\u7a97\u53e3\u5185|\u6536\u76ca|\u8d85\u8fc72\u500d\u6ce2\u52a8\u7387\u7684\u5929\u6570\u5360\u6bd4",
+      "en": "jump frequency: share of days with |return| > 2x rolling vol",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00226,
+          "valid_ic": 0.00601
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00226,
+          "valid_ic": 0.00601
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00153,
+          "valid_ic": 0.00242
+        }
+      ]
+    },
+    {
+      "idea": "choppiness_index",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "choppiness_index",
+      "zh": "\u9707\u8361\u6307\u6570\uff1a\u6536\u76ca\u7b26\u53f7\u7ffb\u8f6c\u9891\u7387\uff0c\u8d8b\u52bfvs\u566a\u58f0",
+      "en": "choppiness index: sign-flip frequency of returns, trend vs noise",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00194,
+          "valid_ic": -0.00468
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00194,
+          "valid_ic": -0.00468
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00136,
+          "valid_ic": 0.00105
+        }
+      ]
+    },
+    {
+      "idea": "efficiency_ratio",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "efficiency_ratio",
+      "zh": "\u8003\u592b\u66fc\u6548\u7387\u6bd4\uff1a\u51c0\u79fb\u52a8/\u7d2f\u8ba1\u7edd\u5bf9\u79fb\u52a8\uff0c\u8d8b\u52bf\u6548\u7387",
+      "en": "Kaufman efficiency ratio: net move / cumulative absolute move, trend efficiency",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00083,
+          "valid_ic": 0.00137
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00083,
+          "valid_ic": 0.00137
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00136,
+          "valid_ic": -0.00019
+        }
+      ]
+    },
+    {
+      "idea": "realized_vol_term_spread",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "realized_vol_term_spread",
+      "zh": "\u5df2\u5b9e\u73b0\u6ce2\u52a8\u7387\u671f\u9650\u5229\u5dee\uff1a\u77ed\u7a97-\u957f\u7a97\u6ce2\u52a8\u7387",
+      "en": "realised-vol term spread: short-window minus long-window vol",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00475,
+          "valid_ic": 0.00125
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00475,
+          "valid_ic": 0.00125
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00468,
+          "valid_ic": -0.0011
+        }
+      ]
+    },
+    {
+      "idea": "multi_mark_divergence",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "multi_mark_divergence",
+      "zh": "\u591a\u6807\u8bb0\u5206\u6b67\u5ea6\uff1a5\u4e2a\u4ef7\u683c\u6807\u8bb05\u65e5\u52a8\u91cf\u7684\u622a\u9762(\u540c\u6807\u7684\u5185)\u79bb\u6563\u5ea6",
+      "en": "multi-mark divergence: dispersion across the 5 marks' own 5-day momenta",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.0019,
+          "valid_ic": 0.01505
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.0019,
+          "valid_ic": 0.01505
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00145,
+          "valid_ic": 0.00596
+        }
+      ]
+    },
+    {
+      "idea": "chaikin_volatility",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "chaikin_volatility",
+      "zh": "Chaikin\u6ce2\u52a8\u7387\uff1a\u533a\u95f4\u5747\u503c\u768410\u65e5\u53d8\u5316\u7387",
+      "en": "Chaikin volatility: 10-day rate of change of the mean range",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00196,
+          "valid_ic": 0.00137
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00196,
+          "valid_ic": 0.00137
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00305,
+          "valid_ic": -0.00283
+        }
+      ]
+    },
+    {
+      "idea": "hawkes_intensity_proxy",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "hawkes_intensity_proxy",
+      "zh": "Hawkes\u5f3a\u5ea6\u4ee3\u7406\uff1a\u6536\u76ca\u5e73\u65b9\u7684EWMA\uff0c\u523b\u753b\u6ce2\u52a8\u7684\u81ea\u6fc0\u805a\u96c6",
+      "en": "Hawkes-intensity proxy: EWMA of squared returns, self-exciting vol clustering",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00149,
+          "valid_ic": 0.01577
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00149,
+          "valid_ic": 0.01577
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00157,
+          "valid_ic": 0.00598
+        }
+      ]
+    },
+    {
+      "idea": "volume_momentum",
+      "variant": null,
+      "category": "volume",
+      "col": "volume_momentum",
+      "zh": "\u6210\u4ea4\u91cf\u52a8\u91cf\uff1a\u6210\u4ea4\u91cf\u7684\u4e00\u9636\u53d8\u5316",
+      "en": "volume momentum: first difference of volume",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00232,
+          "valid_ic": -0.00291
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": -0.00031,
+          "valid_ic": -0.00961
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": -0.00119,
+          "valid_ic": -0.00769
+        }
+      ]
+    },
+    {
+      "idea": "volume_trend_shock",
+      "variant": null,
+      "category": "volume",
+      "col": "volume_trend_shock",
+      "zh": "\u6210\u4ea4\u91cf\u5f02\u52a8\uff1a\u76f8\u5bf920\u65e5\u5747\u91cf\u7684\u504f\u79bb",
+      "en": "volume shock: deviation from the 20-day average volume",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00073,
+          "valid_ic": 0.00807
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00083,
+          "valid_ic": 0.00225
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00068,
+          "valid_ic": 0.00341
+        }
+      ]
+    },
+    {
+      "idea": "volume_acceleration",
+      "variant": null,
+      "category": "volume",
+      "col": "volume_acceleration",
+      "zh": "\u6210\u4ea4\u91cf\u52a0\u901f\u5ea6\uff1a\u91cf\u53d8\u5316\u7684\u4e8c\u9636\u5dee\u5206",
+      "en": "volume acceleration: second difference of volume",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00114,
+          "valid_ic": 0.00339
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00266,
+          "valid_ic": -0.00178
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00191,
+          "valid_ic": -0.0039
+        }
+      ]
+    },
+    {
+      "idea": "volume_stability_cv",
+      "variant": null,
+      "category": "volume",
+      "col": "volume_stability_cv",
+      "zh": "\u6210\u4ea4\u91cf\u7a33\u5b9a\u6027\uff1a20\u65e5\u53d8\u5f02\u7cfb\u6570",
+      "en": "volume stability: 20-day coefficient of variation",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00091,
+          "valid_ic": 0.00077
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 1e-05,
+          "valid_ic": -0.00029
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": -4e-05,
+          "valid_ic": -8e-05
+        }
+      ]
+    },
+    {
+      "idea": "turnover_persistence_ewma",
+      "variant": null,
+      "category": "volume",
+      "col": "turnover_persistence_ewma",
+      "zh": "\u6362\u624b\u6301\u7eed\u6027\uff1a\u6210\u4ea4\u91cfEWMA\u5e73\u6ed1",
+      "en": "turnover persistence: EWMA-smoothed volume",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00379,
+          "valid_ic": 0.00927
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.0019,
+          "valid_ic": 0.00909
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00096,
+          "valid_ic": 0.00177
+        }
+      ]
+    },
+    {
+      "idea": "volume_price_corr",
+      "variant": null,
+      "category": "volume",
+      "col": "volume_price_corr",
+      "zh": "\u91cf\u4ef7\u76f8\u5173\uff1a\u6536\u76ca\u4e0e\u6210\u4ea4\u91cf\u53d8\u5316\u768420\u65e5\u6eda\u52a8\u76f8\u5173",
+      "en": "volume-price correlation: 20-day rolling corr of return and volume change",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00056,
+          "valid_ic": -0.01038
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00167,
+          "valid_ic": -0.01193
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00194,
+          "valid_ic": -0.00685
+        }
+      ]
+    },
+    {
+      "idea": "volume_shock_persistence_ac",
+      "variant": null,
+      "category": "volume",
+      "col": "volume_shock_persistence_ac",
+      "zh": "\u91cf\u51b2\u51fb\u6301\u7eed\u6027\uff1a\u6210\u4ea4\u91cf\u76841\u9636\u81ea\u76f8\u5173(20\u65e5\u7a97)",
+      "en": "volume-shock persistence: 20-day rolling AC(1) of volume",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00185,
+          "valid_ic": -0.00132
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00255,
+          "valid_ic": -0.00102
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00203,
+          "valid_ic": -0.00113
+        }
+      ]
+    },
+    {
+      "idea": "obv_trend",
+      "variant": null,
+      "category": "volume",
+      "col": "obv_trend",
+      "zh": "OBV\u8d8b\u52bf\uff1a\u7d2f\u8ba1\u5e26\u7b26\u53f7\u6210\u4ea4\u91cf\u768410\u65e5\u52a8\u91cf",
+      "en": "OBV trend: 10-day momentum of cumulative signed volume",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00255,
+          "valid_ic": 0.00561
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": -9e-05,
+          "valid_ic": 0.00815
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": -0.00046,
+          "valid_ic": 0.00436
+        }
+      ]
+    },
+    {
+      "idea": "money_flow_index",
+      "variant": null,
+      "category": "volume",
+      "col": "money_flow_index",
+      "zh": "\u8d44\u91d1\u6d41\u6307\u6807\uff1aChaikin\u5f0f\u91cf\u4ef7\u52a0\u6743\u6d41(10\u65e5\u6eda\u52a8\u548c)",
+      "en": "money flow index: Chaikin-style volume-weighted flow (10-day rolling sum)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00071,
+          "valid_ic": -0.00044
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00061,
+          "valid_ic": -0.00882
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00014,
+          "valid_ic": -0.00945
+        }
+      ]
+    },
+    {
+      "idea": "volume_rank_momentum",
+      "variant": null,
+      "category": "volume",
+      "col": "volume_rank_momentum",
+      "zh": "\u6210\u4ea4\u91cf\u6392\u540d\u52a8\u91cf\uff1a\u622a\u9762\u6210\u4ea4\u91cf\u6392\u540d\u76845\u65e5\u53d8\u5316",
+      "en": "volume-rank momentum: 5-day change in the cross-sectional volume rank",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00092,
+          "valid_ic": 0.00666
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00307,
+          "valid_ic": -0.00206
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00378,
+          "valid_ic": -0.00119
+        }
+      ]
+    },
+    {
+      "idea": "volume_volatility_relation",
+      "variant": null,
+      "category": "volume",
+      "col": "volume_volatility_relation",
+      "zh": "\u91cf-\u6ce2\u5173\u7cfb\uff1a\u6210\u4ea4\u91cf\u4e0e|\u6536\u76ca|\u768420\u65e5\u6eda\u52a8\u76f8\u5173",
+      "en": "volume-volatility relation: 20-day rolling corr of volume and |return|",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00187,
+          "valid_ic": 0.00107
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00196,
+          "valid_ic": 0.00159
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00111,
+          "valid_ic": -0.00403
+        }
+      ]
+    },
+    {
+      "idea": "turnover_zscore_extreme",
+      "variant": null,
+      "category": "volume",
+      "col": "turnover_zscore_extreme",
+      "zh": "\u6362\u624b\u6781\u7aef\u5ea6\uff1a\u6210\u4ea4\u91cf\u622a\u9762z\u5206\u6570\u7684\u7edd\u5bf9\u503c(\u5173\u6ce8\u5ea6\u51b2\u51fb)",
+      "en": "turnover extremeness: |cross-sectional z-score| of volume (attention shock)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.0015,
+          "valid_ic": 0.00983
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00126,
+          "valid_ic": 0.0164
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00238,
+          "valid_ic": 0.00874
+        }
+      ]
+    },
+    {
+      "idea": "liquidity_timing",
+      "variant": null,
+      "category": "volume",
+      "col": "liquidity_timing",
+      "zh": "\u6d41\u52a8\u6027\u62e9\u65f6\uff1a\u6210\u4ea4\u91cf\u4e0e|\u6536\u76ca|\u4e58\u79ef\u768410\u65e5\u5747\u503c",
+      "en": "liquidity timing: 10-day mean of volume times |return|",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00543,
+          "valid_ic": 0.01145
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.0023,
+          "valid_ic": 0.01174
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00176,
+          "valid_ic": 0.0032
+        }
+      ]
+    },
+    {
+      "idea": "gap_size_trend",
+      "variant": null,
+      "category": "volume",
+      "col": "gap_size_trend",
+      "zh": "\u8df3\u7a7a\u5e45\u5ea6\u8d8b\u52bf\uff1a\u9694\u591c\u8df3\u7a7a\u7edd\u5bf9\u503c\u768410\u65e5\u5747\u503c\uff0c\u4e8b\u4ef6\u4ee3\u7406",
+      "en": "gap-size trend: 10-day mean of |overnight gap|, an event/news proxy",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00281,
+          "valid_ic": 0.01525
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00107,
+          "valid_ic": 0.01742
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00043,
+          "valid_ic": 0.00706
+        }
+      ]
+    },
+    {
+      "idea": "volume_price_trend",
+      "variant": null,
+      "category": "volume",
+      "col": "volume_price_trend",
+      "zh": "\u91cf\u4ef7\u8d8b\u52bf\u6307\u6807(VPT)\uff1a\u6536\u76ca\u7387\u52a0\u6743\u6210\u4ea4\u91cf\u768410\u65e5\u7d2f\u8ba1",
+      "en": "volume-price trend (VPT): 10-day cumulative return-weighted volume",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00014,
+          "valid_ic": -0.00158
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00077,
+          "valid_ic": 0.00094
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00089,
+          "valid_ic": -0.0007
+        }
+      ]
+    },
+    {
+      "idea": "vpin_proxy",
+      "variant": null,
+      "category": "volume",
+      "col": "vpin_proxy",
+      "zh": "VPIN\u4ee3\u7406\uff1a|\u5e26\u7b26\u53f7\u6210\u4ea4\u91cf|\u5360\u603b\u6210\u4ea4\u91cf\u6bd4\u4f8b\uff0c\u8ba2\u5355\u6d41\u6bd2\u6027",
+      "en": "VPIN proxy: |signed volume| share of total volume, order-flow toxicity",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00026,
+          "valid_ic": 0.00283
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.0001,
+          "valid_ic": -0.00594
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": -0.00023,
+          "valid_ic": -0.00558
+        }
+      ]
+    },
+    {
+      "idea": "turnover_illiquidity_spread",
+      "variant": null,
+      "category": "volume",
+      "col": "turnover_illiquidity_spread",
+      "zh": "\u6d41\u52a8\u6027\u590d\u5408\u80cc\u79bb\uff1a\u6210\u4ea4\u91cf\u6392\u540d\u4e0e\u975e\u6d41\u52a8\u6027\u6392\u540d\u4e4b\u5dee",
+      "en": "liquidity composite divergence: volume rank minus illiquidity rank",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00257,
+          "valid_ic": 0.00832
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00591,
+          "valid_ic": -0.00283
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00507,
+          "valid_ic": -0.00284
+        }
+      ]
+    },
+    {
+      "idea": "market_beta",
+      "variant": null,
+      "category": "technical",
+      "col": "market_beta",
+      "zh": "\u5e02\u573a\u8d1d\u5854\uff1a60\u65e5\u6eda\u52a8\u56de\u5f52\u5230\u622a\u9762\u5e73\u5747\u6536\u76ca\u7684\u7cfb\u6570",
+      "en": "market beta: 60-day rolling regression coefficient on the cross-sectional mean return",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.0024,
+          "valid_ic": 0.0229
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00351,
+          "valid_ic": 0.02147
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.0032,
+          "valid_ic": 0.02114
+        }
+      ]
+    },
+    {
+      "idea": "idio_vol",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "idio_vol",
+      "zh": "\u7279\u8d28\u6ce2\u52a8\u7387\uff1a\u5254\u9664\u5e02\u573abeta\u540e\u6b8b\u5dee\u768460\u65e5\u6ce2\u52a8",
+      "en": "idiosyncratic volatility: 60-day vol of the beta-residual return",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00104,
+          "valid_ic": -0.01456
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00104,
+          "valid_ic": -0.01456
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00125,
+          "valid_ic": -0.00563
+        }
+      ]
+    },
+    {
+      "idea": "coskewness",
+      "variant": null,
+      "category": "technical",
+      "col": "coskewness",
+      "zh": "\u534f\u504f\u5ea6\uff1a\u6536\u76ca\u4e0e\u5e02\u573a\u6536\u76ca\u5e73\u65b9\u768460\u65e5\u6eda\u52a8\u76f8\u5173",
+      "en": "coskewness: 60-day rolling corr of return with squared market return",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00092,
+          "valid_ic": 0.01032
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00093,
+          "valid_ic": 0.00934
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00132,
+          "valid_ic": 0.0097
+        }
+      ]
+    },
+    {
+      "idea": "group_relative_volume",
+      "variant": null,
+      "category": "volume",
+      "col": "group_relative_volume",
+      "zh": "\u884c\u4e1a\u76f8\u5bf9\u6210\u4ea4\u91cf\uff1a\u6210\u4ea4\u91cf\u51cf\u53bb(day,g)\u7ec4\u5185\u5747\u503c",
+      "en": "group-relative volume: volume minus its (day,g) group mean",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00322,
+          "valid_ic": 0.00709
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00427,
+          "valid_ic": 0.00162
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00428,
+          "valid_ic": 0.00155
+        }
+      ]
+    },
+    {
+      "idea": "group_relative_vol",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "group_relative_vol",
+      "zh": "\u884c\u4e1a\u76f8\u5bf9\u6ce2\u52a8\u7387\uff1a20\u65e5\u6ce2\u52a8\u7387\u51cf\u53bb(day,g)\u7ec4\u5185\u5747\u503c",
+      "en": "group-relative volatility: 20-day vol minus its (day,g) group mean",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00056,
+          "valid_ic": 0.00283
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00056,
+          "valid_ic": 0.00283
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.0005,
+          "valid_ic": 0.00281
+        }
+      ]
+    },
+    {
+      "idea": "relative_strength_vs_group",
+      "variant": null,
+      "category": "technical",
+      "col": "relative_strength_vs_group",
+      "zh": "\u7ec4\u5185\u5916\u5f3a\u5f31\u80cc\u79bb\uff1a\u5168\u5e02\u573a\u52a8\u91cf\u6392\u540d\u51cf\u53bb\u7ec4\u5185\u52a8\u91cf\u6392\u540d",
+      "en": "cross-group relative strength: market-wide momentum rank minus within-group rank",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00414,
+          "valid_ic": -0.01048
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00383,
+          "valid_ic": -0.00965
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00406,
+          "valid_ic": -0.00948
+        }
+      ]
+    },
+    {
+      "idea": "days_since_high",
+      "variant": null,
+      "category": "technical",
+      "col": "days_since_high",
+      "zh": "\u8ddd\u6700\u9ad8\u70b9\u5929\u6570\uff1a60\u65e5\u7a97\u53e3\u5185\u6700\u8fd1\u65b0\u9ad8\u4ee5\u6765\u7684\u5929\u6570",
+      "en": "days since high: days elapsed since the most recent 60-day high",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.0011,
+          "valid_ic": 0.00688
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00153,
+          "valid_ic": 0.00605
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.0013,
+          "valid_ic": 0.00383
+        }
+      ]
+    },
+    {
+      "idea": "distance_from_low",
+      "variant": null,
+      "category": "technical",
+      "col": "distance_from_low",
+      "zh": "\u8ddd\u6700\u4f4e\u70b9\u8ddd\u79bb\uff1a\u6536\u76d8\u4ef7\u76f8\u5bf960\u65e5\u6700\u4f4e\u4ef7\u7684\u6bd4\u4f8b",
+      "en": "distance from low: close relative to the 60-day low",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00025,
+          "valid_ic": -0.00082
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": -0.00017,
+          "valid_ic": -0.00899
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00097,
+          "valid_ic": -0.00397
+        }
+      ]
+    },
+    {
+      "idea": "ma_cross",
+      "variant": null,
+      "category": "technical",
+      "col": "ma_cross",
+      "zh": "\u5747\u7ebf\u4ea4\u53c9\uff1a10\u65e5\u5747\u7ebf\u51cf40\u65e5\u5747\u7ebf",
+      "en": "moving-average cross: 10-day MA minus 40-day MA",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.0006,
+          "valid_ic": 0.01095
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": -0.00022,
+          "valid_ic": 0.0117
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": -0.00102,
+          "valid_ic": 0.00767
+        }
+      ]
+    },
+    {
+      "idea": "trend_slope",
+      "variant": null,
+      "category": "technical",
+      "col": "trend_slope",
+      "zh": "\u8d8b\u52bf\u659c\u7387\uff1a20\u65e5\u7a97\u53e3\u5185\u6536\u76d8\u4ef7\u5bf9\u65f6\u95f4\u7684\u56de\u5f52\u659c\u7387",
+      "en": "trend slope: 20-day rolling regression slope of close on time",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 6e-05,
+          "valid_ic": 0.007
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": -0.00077,
+          "valid_ic": 0.00557
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": -0.00196,
+          "valid_ic": -0.00094
+        }
+      ]
+    },
+    {
+      "idea": "bollinger_position",
+      "variant": null,
+      "category": "technical",
+      "col": "bollinger_position",
+      "zh": "\u5e03\u6797\u5e26\u4f4d\u7f6e\uff1a\u6536\u76d8\u4ef7\u504f\u79bb20\u65e5\u5747\u7ebf\u9664\u4ee520\u65e5\u6807\u51c6\u5dee",
+      "en": "Bollinger position: close deviation from its 20-day MA over 20-day std",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.0069,
+          "valid_ic": 0.01
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.0064,
+          "valid_ic": 0.00993
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00585,
+          "valid_ic": 0.00211
+        }
+      ]
+    },
+    {
+      "idea": "rsi_like",
+      "variant": null,
+      "category": "technical",
+      "col": "rsi_like",
+      "zh": "RSI\u5f0f\u76f8\u5bf9\u5f3a\u5f31\uff1a14\u65e5\u4e0a\u6da8\u5e45\u5ea6\u5360\u603b\u5e45\u5ea6\u6bd4\u4f8b",
+      "en": "RSI-like relative strength: 14-day up-move share of total move",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00382,
+          "valid_ic": 0.00774
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00425,
+          "valid_ic": 0.00802
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00347,
+          "valid_ic": 0.0011
+        }
+      ]
+    },
+    {
+      "idea": "win_rate",
+      "variant": null,
+      "category": "technical",
+      "col": "win_rate",
+      "zh": "\u80dc\u7387\uff1a\u7a97\u53e3\u5185\u4e0a\u6da8\u5929\u6570\u5360\u6bd4",
+      "en": "win rate: share of up-days in the window",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00102,
+          "valid_ic": 0.00419
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00138,
+          "valid_ic": 0.00474
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00042,
+          "valid_ic": -0.00015
+        }
+      ]
+    },
+    {
+      "idea": "autocorr_return",
+      "variant": null,
+      "category": "technical",
+      "col": "autocorr_return",
+      "zh": "\u6536\u76ca\u81ea\u76f8\u5173\uff1a20\u65e5\u7a97\u53e3\u5185\u4e00\u9636\u81ea\u76f8\u5173",
+      "en": "return autocorrelation: 20-day rolling AC(1)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00156,
+          "valid_ic": -0.00968
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00152,
+          "valid_ic": -0.01
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00147,
+          "valid_ic": -0.01012
+        }
+      ]
+    },
+    {
+      "idea": "trend_efficiency",
+      "variant": null,
+      "category": "technical",
+      "col": "trend_efficiency",
+      "zh": "\u8d8b\u52bf\u62df\u5408\u4f18\u5ea6\uff1a\u7ebf\u6027\u8d8b\u52bf\u89e3\u91ca\u7684\u4ef7\u683c\u65b9\u5dee\u5360\u6bd4",
+      "en": "trend goodness-of-fit: share of price variance explained by a linear trend",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00122,
+          "valid_ic": 0.0013
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00211,
+          "valid_ic": 0.00091
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00198,
+          "valid_ic": 0.00062
+        }
+      ]
+    },
+    {
+      "idea": "vwap_efficiency",
+      "variant": null,
+      "category": "technical",
+      "col": "vwap_efficiency",
+      "zh": "VWAP\u6548\u7387\uff1a|\u6536\u76d8-VWAP|\u76f8\u5bf9\u65e5\u5185\u533a\u95f4",
+      "en": "VWAP efficiency: |close-vwap| relative to the day's range",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00203,
+          "valid_ic": -0.00254
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00176,
+          "valid_ic": 0.00444
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00179,
+          "valid_ic": 0.0048
+        }
+      ]
+    },
+    {
+      "idea": "multi_mark_common_trend",
+      "variant": null,
+      "category": "technical",
+      "col": "multi_mark_common_trend",
+      "zh": "\u591a\u6807\u8bb0\u5171\u540c\u8d8b\u52bf\uff1a5\u4e2a\u4ef7\u683c\u6807\u8bb05\u65e5\u52a8\u91cf\u7684\u5747\u503c(\u5171\u540c\u5206\u91cf)",
+      "en": "multi-mark common trend: the mean of the 5 marks' own 5-day momenta (common component)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.01004,
+          "valid_ic": 0.00703
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.01022,
+          "valid_ic": 0.00635
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00865,
+          "valid_ic": -0.00061
+        }
+      ]
+    },
+    {
+      "idea": "book_pressure_proxy",
+      "variant": null,
+      "category": "technical",
+      "col": "book_pressure_proxy",
+      "zh": "\u76d8\u53e3\u538b\u529b\u4ee3\u7406\uff1a\u6536\u76d8\u4ef7\u76f8\u5bf9(prc3,prc4)\u4e2d\u70b9\u7684\u4f4d\u7f6e",
+      "en": "book-pressure proxy: close's position relative to the (prc3,prc4) midpoint",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00129,
+          "valid_ic": -0.00341
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": -0.00055,
+          "valid_ic": -0.02185
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": -0.00436,
+          "valid_ic": -0.02117
+        }
+      ]
+    },
+    {
+      "idea": "mark_spread_trend",
+      "variant": null,
+      "category": "technical",
+      "col": "mark_spread_trend",
+      "zh": "\u6807\u8bb0\u4ef7\u5dee\u8d8b\u52bf\uff1a5\u4e2a\u6807\u8bb0\u7684\u622a\u9762\u6807\u51c6\u5dee\u76845\u51cf20\u65e5\u5747\u503c\u5dee",
+      "en": "mark-spread trend: 5-vs-20-day change in the cross-mark std",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00414,
+          "valid_ic": 0.01006
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00217,
+          "valid_ic": 0.00502
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00157,
+          "valid_ic": 0.0028
+        }
+      ]
+    },
+    {
+      "idea": "tick_efficiency",
+      "variant": null,
+      "category": "technical",
+      "col": "tick_efficiency",
+      "zh": "\u4ef7\u683c\u6355\u83b7\u6548\u7387\uff1a|\u51c0\u6536\u76ca|\u76f8\u5bf9\u65e5\u5185\u533a\u95f4",
+      "en": "tick efficiency: |net return| relative to the day's range",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00046,
+          "valid_ic": -0.00247
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00113,
+          "valid_ic": 0.00923
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00116,
+          "valid_ic": 0.00813
+        }
+      ]
+    },
+    {
+      "idea": "range_asymmetry",
+      "variant": null,
+      "category": "technical",
+      "col": "range_asymmetry",
+      "zh": "\u533a\u95f4\u4e0d\u5bf9\u79f0\u6027\uff1a\u4e0a\u65b9\u7a7a\u95f4\u51cf\u4e0b\u65b9\u7a7a\u95f4",
+      "en": "range asymmetry: upside room minus downside room around the close",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00039,
+          "valid_ic": -0.02329
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": -0.00094,
+          "valid_ic": -0.02542
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": -0.00619,
+          "valid_ic": -0.02709
+        }
+      ]
+    },
+    {
+      "idea": "kyle_lambda",
+      "variant": null,
+      "category": "technical",
+      "col": "kyle_lambda",
+      "zh": "Kyle's lambda\uff1a|\u6536\u76ca|\u5bf9\u6210\u4ea4\u91cf\u768460\u65e5\u6eda\u52a8\u56de\u5f52\u659c\u7387",
+      "en": "Kyle's lambda: 60-day rolling regression slope of |return| on volume",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00315,
+          "valid_ic": 0.00456
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00371,
+          "valid_ic": 0.00455
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00371,
+          "valid_ic": 0.0038
+        }
+      ]
+    },
+    {
+      "idea": "impact_decay",
+      "variant": null,
+      "category": "technical",
+      "col": "impact_decay",
+      "zh": "\u51b2\u51fb\u8870\u51cf\uff1a\u5f53\u65e5\u6536\u76ca\u51cf\u53bb\u51763\u65e5EWMA(\u6682\u65f6\u6027\u51b2\u51fb\u5206\u91cf)",
+      "en": "impact decay: today's return minus its 3-day EWMA (the transient-impact component)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00042,
+          "valid_ic": 0.0027
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00221,
+          "valid_ic": 0.00928
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00485,
+          "valid_ic": 0.00666
+        }
+      ]
+    },
+    {
+      "idea": "permanent_impact_proxy",
+      "variant": null,
+      "category": "technical",
+      "col": "permanent_impact_proxy",
+      "zh": "\u6c38\u4e45\u51b2\u51fb\u4ee3\u7406\uff1a\u6536\u76ca\u768420\u65e5EWMA(\u6301\u7eed\u6027\u5206\u91cf)",
+      "en": "permanent-impact proxy: the 20-day EWMA of return (the persistent component)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00389,
+          "valid_ic": 0.01185
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.0027,
+          "valid_ic": 0.01006
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00152,
+          "valid_ic": 0.00318
+        }
+      ]
+    },
+    {
+      "idea": "reversal_asymmetry",
+      "variant": null,
+      "category": "technical",
+      "col": "reversal_asymmetry",
+      "zh": "\u53cd\u8f6c\u4e0d\u5bf9\u79f0\u6027\uff1a\u4e0b\u8dcc\u65e5\u53cd\u8f6c\u529b\u5ea6\u51cf\u4e0a\u6da8\u65e5\u53cd\u8f6c\u529b\u5ea6",
+      "en": "reversal asymmetry: down-day reversion strength minus up-day reversion strength",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00091,
+          "valid_ic": 0.00055
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00091,
+          "valid_ic": -0.00235
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00065,
+          "valid_ic": -0.00235
+        }
+      ]
+    },
+    {
+      "idea": "amihud_illiquidity",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "amihud_illiquidity",
+      "zh": "Amihud\u975e\u6d41\u52a8\u6027\uff1a|\u6536\u76ca|/\u6210\u4ea4\u91cf",
+      "en": "Amihud illiquidity: |return| / volume",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00056,
+          "valid_ic": 0.00326
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00056,
+          "valid_ic": 0.00326
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00175,
+          "valid_ic": 0.0087
+        }
+      ]
+    },
+    {
+      "idea": "amihud_trend",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "amihud_trend",
+      "zh": "\u975e\u6d41\u52a8\u6027\u8d8b\u52bf\uff1aAmihud\u6307\u6807\u768410\u65e5\u5747\u503c",
+      "en": "illiquidity trend: 10-day mean of the Amihud measure",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00413,
+          "valid_ic": -0.01232
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00413,
+          "valid_ic": -0.01232
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00435,
+          "valid_ic": -0.00472
+        }
+      ]
+    },
+    {
+      "idea": "signed_amihud",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "signed_amihud",
+      "zh": "\u5e26\u7b26\u53f7\u975e\u6d41\u52a8\u6027\uff1a\u7b26\u53f7(\u6536\u76ca)\u4e58\u4ee5\u975e\u6d41\u52a8\u6027",
+      "en": "signed illiquidity: sign(return) times illiquidity",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00313,
+          "valid_ic": 0.01234
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00313,
+          "valid_ic": 0.01234
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00333,
+          "valid_ic": 0.01483
+        }
+      ]
+    },
+    {
+      "idea": "illiquidity_momentum",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "illiquidity_momentum",
+      "zh": "\u975e\u6d41\u52a8\u6027\u52a8\u91cf\uff1aAmihud\u6307\u6807\u768410\u65e5\u53d8\u5316",
+      "en": "illiquidity momentum: 10-day change in the Amihud measure",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00041,
+          "valid_ic": -0.00764
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00041,
+          "valid_ic": -0.00764
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": -0.00047,
+          "valid_ic": -0.00564
+        }
+      ]
+    },
+    {
+      "idea": "liquidity_adj_range",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "liquidity_adj_range",
+      "zh": "\u6d41\u52a8\u6027\u8c03\u6574\u533a\u95f4\uff1a\u65e5\u5185\u533a\u95f4\u9664\u4ee5\u6210\u4ea4\u91cf",
+      "en": "liquidity-adjusted range: intraday range divided by volume",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00028,
+          "valid_ic": -0.0106
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00028,
+          "valid_ic": -0.0106
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": -0.00148,
+          "valid_ic": -0.00894
+        }
+      ]
+    },
+    {
+      "idea": "price_vol_elasticity",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "price_vol_elasticity",
+      "zh": "\u4ef7\u683c-\u6210\u4ea4\u91cf\u5f39\u6027\uff1a|\u6536\u76ca|\u76f8\u5bf9|\u6210\u4ea4\u91cf\u53d8\u5316|(\u7c7b\u4ef7\u683c\u51b2\u51fb)",
+      "en": "price-volume elasticity: |return| relative to |volume change| (a price-impact proxy)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00315,
+          "valid_ic": 0.00282
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00315,
+          "valid_ic": 0.00282
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00154,
+          "valid_ic": 0.00259
+        }
+      ]
+    },
+    {
+      "idea": "gap_fade",
+      "variant": null,
+      "category": "interaction",
+      "col": "gap_fade",
+      "zh": "\u8df3\u7a7a\u56de\u8865\uff1a\u9694\u591c\u8df3\u7a7a\u65b9\u5411\u4e58\u4ee5\u5f53\u65e5\u65e5\u5185\u6536\u76ca",
+      "en": "gap fade: overnight-gap sign times same-day intraday return",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00129,
+          "valid_ic": 0.01035
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00084,
+          "valid_ic": 0.00893
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": -0.00056,
+          "valid_ic": 0.00358
+        }
+      ]
+    },
+    {
+      "idea": "ofi_lite",
+      "variant": null,
+      "category": "interaction",
+      "col": "ofi_lite",
+      "zh": "\u8ba2\u5355\u6d41\u5931\u8861\u4ee3\u7406\uff1a\u6536\u76ca\u7b26\u53f7\u4e58\u4ee5\u6210\u4ea4\u91cf(\u65b9\u5411x\u5f3a\u5ea6\u5206\u89e3)",
+      "en": "OFI-lite: sign(return) times volume (sign x intensity decomposition)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00247,
+          "valid_ic": -0.00308
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00301,
+          "valid_ic": -0.00341
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00297,
+          "valid_ic": -0.00295
+        }
+      ]
+    },
+    {
+      "idea": "volume_weighted_reversal",
+      "variant": null,
+      "category": "interaction",
+      "col": "volume_weighted_reversal",
+      "zh": "\u6210\u4ea4\u91cf\u52a0\u6743\u53cd\u8f6c\uff1a\u53cd\u8f6c\u4fe1\u53f7\u4e58\u4ee5\u6210\u4ea4\u91cf\u622a\u9762\u6392\u540d(\u9ad8\u5173\u6ce8\u5ea6\u66f4\u6613\u53cd\u8f6c)",
+      "en": "volume-weighted reversal: reversal scaled by the cross-sectional volume rank",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00099,
+          "valid_ic": 0.0011
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00129,
+          "valid_ic": 0.00235
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00096,
+          "valid_ic": -0.0014
+        }
+      ]
+    },
+    {
+      "idea": "illiquidity_x_momentum",
+      "variant": null,
+      "category": "interaction",
+      "col": "illiquidity_x_momentum",
+      "zh": "\u975e\u6d41\u52a8\u6027x\u52a8\u91cf\uff1a\u975e\u6d41\u52a8\u6027\u6ea2\u4ef7\u96c6\u4e2d\u5728\u4f4e\u6d41\u52a8\u6027\u540d\u5b57\u4e0a\u7684\u6761\u4ef6\u5316\u52a8\u91cf",
+      "en": "illiquidity x momentum: momentum conditioned on the illiquidity level",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00072,
+          "valid_ic": 0.00183
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00156,
+          "valid_ic": 0.00277
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00216,
+          "valid_ic": 0.00476
+        }
+      ]
+    },
+    {
+      "idea": "vol_regime_reversal",
+      "variant": null,
+      "category": "interaction",
+      "col": "vol_regime_reversal",
+      "zh": "\u6ce2\u52a8\u7387\u5236\u5ea6\u53cd\u8f6c\uff1a\u53cd\u8f6c\u4fe1\u53f7\u4e58\u4ee5\u6ce2\u52a8\u7387\u622a\u9762\u6392\u540d",
+      "en": "vol-regime reversal: reversal scaled by the cross-sectional volatility rank",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00338,
+          "valid_ic": 0.00465
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00455,
+          "valid_ic": 0.00885
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.0039,
+          "valid_ic": 0.00443
+        }
+      ]
+    },
+    {
+      "idea": "liquidity_regime_momentum",
+      "variant": null,
+      "category": "interaction",
+      "col": "liquidity_regime_momentum",
+      "zh": "\u6d41\u52a8\u6027\u5236\u5ea6\u52a8\u91cf\uff1a\u52a8\u91cf\u4fe1\u53f7\u4e58\u4ee5\u6210\u4ea4\u91cf\u622a\u9762\u6392\u540d",
+      "en": "liquidity-regime momentum: momentum scaled by the cross-sectional volume rank",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00046,
+          "valid_ic": 0.00254
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": -2e-05,
+          "valid_ic": 0.00211
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00012,
+          "valid_ic": 0.00103
+        }
+      ]
+    },
+    {
+      "idea": "divergence_indicator",
+      "variant": null,
+      "category": "interaction",
+      "col": "divergence_indicator",
+      "zh": "\u91cf\u4ef7\u80cc\u79bb\uff1a\u4ef7\u683c\u4e0a\u6da8\u4f46\u6210\u4ea4\u91cf\u8d70\u5f31\u7684\u80cc\u79bb\u4fe1\u53f7",
+      "en": "price-volume divergence: price rising while volume is fading",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00075,
+          "valid_ic": 0.0141
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.0013,
+          "valid_ic": 0.01423
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00071,
+          "valid_ic": 0.00959
+        }
+      ]
+    },
+    {
+      "idea": "toxicity_weighted_momentum",
+      "variant": null,
+      "category": "interaction",
+      "col": "toxicity_weighted_momentum",
+      "zh": "\u6bd2\u6027\u6298\u4ef7\u52a8\u91cf\uff1a\u7528VPIN\u4ee3\u7406\u5bf9\u52a8\u91cf\u4fe1\u53f7\u505a\u6bd2\u6027\u6298\u4ef7",
+      "en": "toxicity-discounted momentum: momentum discounted by the VPIN-proxy toxicity",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00595,
+          "valid_ic": 0.01019
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00595,
+          "valid_ic": 0.0094
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00488,
+          "valid_ic": 0.01099
+        }
+      ]
+    },
+    {
+      "idea": "sign_intensity_decomp",
+      "variant": null,
+      "category": "interaction",
+      "col": "sign_intensity_decomp",
+      "zh": "\u65b9\u5411x\u5f3a\u5ea6\u5206\u89e3\uff1a\u52a8\u91cf\u65b9\u5411\u4e58\u4ee5\u6ce2\u52a8\u7387\u6392\u540d(\u7f6e\u4fe1\u5ea6)",
+      "en": "sign x intensity decomposition: momentum direction times a volatility-rank confidence weight",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00108,
+          "valid_ic": 0.00654
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00106,
+          "valid_ic": 0.00671
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00143,
+          "valid_ic": 0.00825
+        }
+      ]
+    },
+    {
+      "idea": "liquidity_tier_reversal",
+      "variant": null,
+      "category": "interaction",
+      "col": "liquidity_tier_reversal",
+      "zh": "\u6d41\u52a8\u6027\u5206\u5c42\u53cd\u8f6c\uff1a\u53cd\u8f6c\u4fe1\u53f7\u4e58\u4ee5x_60\u6362\u624b\u4ee3\u7406\u6392\u540d",
+      "en": "liquidity-tier reversal: reversal scaled by the x_60 turnover-proxy rank",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00182,
+          "valid_ic": 0.00311
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00116,
+          "valid_ic": 0.006
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00059,
+          "valid_ic": 0.00648
+        }
+      ]
+    },
+    {
+      "idea": "range_expansion_breakout",
+      "variant": null,
+      "category": "interaction",
+      "col": "range_expansion_breakout",
+      "zh": "\u533a\u95f4\u6269\u5f20\u7a81\u7834\uff1a\u5f53\u65e5\u533a\u95f4\u663e\u8457\u8d85\u8fc720\u65e5\u5747\u503c\u7684\u7a81\u7834\u4fe1\u53f7",
+      "en": "range-expansion breakout: today's range materially exceeding its 20-day mean",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.003,
+          "valid_ic": 0.00461
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00337,
+          "valid_ic": 0.00425
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00297,
+          "valid_ic": 0.00794
+        }
+      ]
+    },
+    {
+      "idea": "open_close_vwap_triangle",
+      "variant": null,
+      "category": "interaction",
+      "col": "open_close_vwap_triangle",
+      "zh": "\u5f00-\u6536-VWAP\u4e09\u89d2\uff1a\u5f00\u76d8\u4e0e\u6536\u76d8\u76f8\u5bf9VWAP\u504f\u79bb\u7684\u4e58\u79ef(\u5171\u632f/\u80cc\u79bb)",
+      "en": "open-close-VWAP triangle: product of open's and close's deviations from VWAP",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00423,
+          "valid_ic": 0.00327
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00298,
+          "valid_ic": -0.00067
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00088,
+          "valid_ic": -0.00553
+        }
+      ]
+    },
+    {
+      "idea": "amihud_vol_regime_interaction",
+      "variant": null,
+      "category": "interaction",
+      "col": "amihud_vol_regime_interaction",
+      "zh": "\u975e\u6d41\u52a8\u6027x\u6ce2\u52a8\u7387\u5236\u5ea6\uff1a\u4e24\u7c7b\u98ce\u9669\u6392\u540d\u7684\u534f\u540c",
+      "en": "illiquidity x vol-regime: co-movement of the two cross-sectional risk ranks",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 6e-05,
+          "valid_ic": 0.00081
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 1e-05,
+          "valid_ic": 0.00067
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00042,
+          "valid_ic": 0.00343
+        }
+      ]
+    },
+    {
+      "idea": "reversal_x_beta",
+      "variant": null,
+      "category": "interaction",
+      "col": "reversal_x_beta",
+      "zh": "\u53cd\u8f6cx\u8d1d\u5854\uff1a\u53cd\u8f6c\u4fe1\u53f7\u4e58\u4ee5\u5e02\u573a\u8d1d\u5854\u6392\u540d(\u9ad8\u8d1d\u5854\u540d\u5b57\u53cd\u8f6c\u7279\u6027\u4e0d\u540c)",
+      "en": "reversal x beta: reversal scaled by the cross-sectional market-beta rank",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00049,
+          "valid_ic": -0.00554
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00019,
+          "valid_ic": -0.00315
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00058,
+          "valid_ic": -0.00312
+        }
+      ]
+    },
+    {
+      "idea": "vwap_reversion_speed",
+      "variant": null,
+      "category": "technical",
+      "col": "vwap_reversion_speed",
+      "zh": "VWAP\u56de\u5f52\u901f\u5ea6\uff1a\u6536\u76d8-VWAP\u538b\u529b\u76841\u9636\u81ea\u76f8\u5173\uff0c\u538b\u529b\u6301\u7eed\u6027",
+      "en": "VWAP-reversion speed: AC(1) of the close-vwap pressure, its persistence",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00035,
+          "valid_ic": -0.00249
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00051,
+          "valid_ic": -0.00173
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00035,
+          "valid_ic": -0.00171
+        }
+      ]
+    },
+    {
+      "idea": "beta_momentum",
+      "variant": null,
+      "category": "technical",
+      "col": "beta_momentum",
+      "zh": "\u8d1d\u5854\u52a8\u91cf\uff1a60\u65e5\u5e02\u573a\u8d1d\u5854\u81ea\u8eab\u768420\u65e5\u53d8\u5316",
+      "en": "beta momentum: 20-day change in the 60-day rolling market beta",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00225,
+          "valid_ic": 0.01139
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00196,
+          "valid_ic": 0.00987
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00108,
+          "valid_ic": 0.00929
+        }
+      ]
+    },
+    {
+      "idea": "overnight_beta",
+      "variant": null,
+      "category": "technical",
+      "col": "overnight_beta",
+      "zh": "\u9694\u591c\u8d1d\u5854\uff1a\u9694\u591c\u6536\u76ca\u5bf9\u622a\u9762\u5e73\u5747\u9694\u591c\u6536\u76ca\u768460\u65e5\u56de\u5f52\u7cfb\u6570",
+      "en": "overnight beta: 60-day rolling regression of overnight return on the cross-sectional mean overnight return",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00187,
+          "valid_ic": 0.01774
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00345,
+          "valid_ic": 0.01326
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00358,
+          "valid_ic": 0.01262
+        }
+      ]
+    },
+    {
+      "idea": "range_to_gap_ratio",
+      "variant": null,
+      "category": "technical",
+      "col": "range_to_gap_ratio",
+      "zh": "\u533a\u95f4/\u8df3\u7a7a\u6bd4\uff1a\u65e5\u5185\u533a\u95f4\u76f8\u5bf9\u9694\u591c\u8df3\u7a7a\u5e45\u5ea6\uff0c\u65e5\u5185vs\u9694\u591c\u4fe1\u606f\u5360\u6bd4",
+      "en": "range-to-gap ratio: intraday range relative to overnight-gap size, intraday vs overnight information share",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00516,
+          "valid_ic": 0.00275
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00392,
+          "valid_ic": 0.00224
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00435,
+          "valid_ic": 0.00272
+        }
+      ]
+    },
+    {
+      "idea": "overnight_drift_persistence",
+      "variant": null,
+      "category": "reversal",
+      "col": "overnight_drift_persistence",
+      "zh": "\u9694\u591c\u6f02\u79fb\u6301\u7eed\u6027\uff1a\u9694\u591c\u8df3\u7a7a\u65b9\u5411\u76845\u65e5\u5e73\u6ed1\uff0c\u662f\u5426\u6301\u7eed\u540c\u5411",
+      "en": "overnight-drift persistence: 5-day smoothed overnight gap, whether the drift persists",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00253,
+          "valid_ic": -0.01178
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00098,
+          "valid_ic": -0.01489
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "group(g)-neutral + vol10-residualized (regression)",
+          "train_ic": 0.00377,
+          "valid_ic": -0.00296
+        }
+      ]
+    },
+    {
+      "idea": "cross_mark_lead_lag",
+      "variant": null,
+      "category": "technical",
+      "col": "cross_mark_lead_lag",
+      "zh": "\u8de8\u6807\u8bb0\u9886\u5148-\u6ede\u540e\uff1a\u6628\u65e5\u6536\u76d8\u53d8\u52a8\u5bf9\u4eca\u65e5\u5f00\u76d8\u8df3\u7a7a\u768420\u65e5\u6eda\u52a8\u76f8\u5173",
+      "en": "cross-mark lead-lag: 20-day rolling corr of yesterday's close move with today's overnight gap",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00113,
+          "valid_ic": 0.00257
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00066,
+          "valid_ic": 0.00291
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00075,
+          "valid_ic": 0.00347
+        }
+      ]
+    },
+    {
+      "idea": "volatility_clustering_ac",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "volatility_clustering_ac",
+      "zh": "\u6ce2\u52a8\u805a\u96c6\u6027\uff1a\u6536\u76ca\u5e73\u65b9\u76841\u9636\u81ea\u76f8\u5173(ARCH\u6548\u5e94)\uff0c20\u65e5\u7a97",
+      "en": "volatility clustering: AC(1) of squared returns (ARCH effect), 20-day window",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00058,
+          "valid_ic": -0.00634
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00058,
+          "valid_ic": -0.00634
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00047,
+          "valid_ic": -0.00426
+        }
+      ]
+    },
+    {
+      "idea": "amihud_vol_ratio",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "amihud_vol_ratio",
+      "zh": "\u5355\u4f4d\u98ce\u9669\u975e\u6d41\u52a8\u6027\uff1aAmihud\u975e\u6d41\u52a8\u6027\u9664\u4ee5\u5df2\u5b9e\u73b0\u6ce2\u52a8\u7387",
+      "en": "illiquidity-per-unit-risk: Amihud illiquidity divided by realised volatility",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00067,
+          "valid_ic": 0.01008
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00067,
+          "valid_ic": 0.01008
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": 0.00212,
+          "valid_ic": 0.00713
+        }
+      ]
+    },
+    {
+      "idea": "range_meanreversion",
+      "variant": null,
+      "category": "vol_liquidity",
+      "col": "range_meanreversion",
+      "zh": "\u6ce2\u52a8\u7387\u5747\u503c\u56de\u5f52\uff1a\u5f53\u65e5\u533a\u95f4\u504f\u79bb\u517610\u65e5\u5747\u503c\u7684\u53cd\u5411\u4fe1\u53f7",
+      "en": "volatility mean-reversion: today's range deviation from its 10-day mean, sign-reversed",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00042,
+          "valid_ic": -0.00407
+        },
+        {
+          "name": "v2_processed",
+          "formula": "robust (median/MAD) z-score",
+          "train_ic": 0.00042,
+          "valid_ic": -0.00407
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "log1p + robust z, group(g)-neutralized",
+          "train_ic": -0.00049,
+          "valid_ic": -0.00316
+        }
+      ]
+    },
+    {
+      "idea": "liquidity_beta",
+      "variant": null,
+      "category": "technical",
+      "col": "liquidity_beta",
+      "zh": "\u6d41\u52a8\u6027\u8d1d\u5854\uff1a\u6210\u4ea4\u91cf\u5bf9\u5e02\u573a\u7edd\u5bf9\u6536\u76ca\u768460\u65e5\u56de\u5f52\u654f\u611f\u5ea6",
+      "en": "liquidity beta: 60-day rolling sensitivity of volume to the market's absolute return",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00024,
+          "valid_ic": 0.00742
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00053,
+          "valid_ic": 0.00396
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00041,
+          "valid_ic": 0.00406
+        }
+      ]
+    },
+    {
+      "idea": "gap_range_beta",
+      "variant": null,
+      "category": "technical",
+      "col": "gap_range_beta",
+      "zh": "\u8df3\u7a7a-\u533a\u95f4\u5f39\u6027\uff1a\u65e5\u5185\u533a\u95f4\u5bf9\u9694\u591c\u8df3\u7a7a\u5e45\u5ea6\u768420\u65e5\u56de\u5f52\u7cfb\u6570",
+      "en": "gap-range elasticity: 20-day rolling regression of intraday range on overnight-gap size",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00105,
+          "valid_ic": 0.00379
+        },
+        {
+          "name": "v2_processed",
+          "formula": "cross-sectional rank transform",
+          "train_ic": 0.00112,
+          "valid_ic": 0.00467
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "rank, residualized vs x_0..x_7 reversal cluster (regression)",
+          "train_ic": 0.00135,
+          "valid_ic": 0.00562
+        }
+      ]
+    },
+    {
+      "idea": "attention_shift_trend",
+      "variant": null,
+      "category": "volume",
+      "col": "attention_shift_trend",
+      "zh": "\u5173\u6ce8\u5ea6\u8f6c\u79fb\u8d8b\u52bf\uff1a\u884c\u4e1a\u76f8\u5bf9\u6210\u4ea4\u91cf\u768410\u65e5\u53d8\u5316",
+      "en": "attention-shift trend: 10-day change in the industry-relative volume position",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00335,
+          "valid_ic": 0.00048
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00475,
+          "valid_ic": -0.00063
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": 0.00476,
+          "valid_ic": -0.00063
+        }
+      ]
+    },
+    {
+      "idea": "group_volume_dispersion",
+      "variant": null,
+      "category": "volume",
+      "col": "group_volume_dispersion",
+      "zh": "\u884c\u4e1a\u6210\u4ea4\u91cf\u5206\u6563\u5ea6\uff1a\u7ec4\u5185\u6210\u4ea4\u91cf\u622a\u9762\u6807\u51c6\u5dee(\u884c\u4e1a\u5173\u6ce8\u5ea6\u5206\u6b67)",
+      "en": "group volume dispersion: within-(day,g) cross-sectional std of volume (industry attention disagreement)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00482,
+          "valid_ic": -0.0169
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00357,
+          "valid_ic": -0.02451
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": -0.00039,
+          "valid_ic": -0.0021
+        }
+      ]
+    },
+    {
+      "idea": "overshoot_ratio",
+      "variant": null,
+      "category": "interaction",
+      "col": "overshoot_ratio",
+      "zh": "\u8d85\u8c03\u6bd4\u7387\uff1a\u5355\u65e5\u6536\u76ca\u76f8\u5bf9\u5f53\u65e5\u533a\u95f4\u7684\u5360\u6bd4(\u65b9\u5411\u6027\u8d85\u8c03\u5f3a\u5ea6)",
+      "en": "overshoot ratio: today's net return as a share of today's range (directional overshoot strength)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00036,
+          "valid_ic": -0.00559
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": -0.00265,
+          "valid_ic": -0.00871
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": -0.00233,
+          "valid_ic": -0.0109
+        }
+      ]
+    },
+    {
+      "idea": "reversal_after_volume_spike",
+      "variant": null,
+      "category": "interaction",
+      "col": "reversal_after_volume_spike",
+      "zh": "\u653e\u91cf\u540e\u53cd\u8f6c\uff1a\u53cd\u8f6c\u4fe1\u53f7\u88ab\u524d\u4e00\u65e5\u5f02\u5e38\u653e\u91cf\u653e\u5927",
+      "en": "reversal-after-volume-spike: reversal amplified when yesterday's volume was an outlier",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00504,
+          "valid_ic": 0.01046
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00736,
+          "valid_ic": 0.0089
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00637,
+          "valid_ic": 0.00592
+        }
+      ]
+    },
+    {
+      "idea": "signed_range_trend",
+      "variant": null,
+      "category": "interaction",
+      "col": "signed_range_trend",
+      "zh": "\u5e26\u65b9\u5411\u533a\u95f4\u8d8b\u52bf\uff1a\u533a\u95f4\u5e45\u5ea6\u4e58\u4ee5\u6536\u76ca\u65b9\u5411\u76845\u65e5\u5747\u503c",
+      "en": "signed-range trend: 5-day mean of range magnitude times return direction",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00445,
+          "valid_ic": 0.01703
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00432,
+          "valid_ic": 0.01291
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00207,
+          "valid_ic": 0.00692
+        }
+      ]
+    },
+    {
+      "idea": "vol_illiquidity_regime",
+      "variant": null,
+      "category": "interaction",
+      "col": "vol_illiquidity_regime",
+      "zh": "\u6ce2\u52a8-\u975e\u6d41\u52a8\u6027\u8054\u52a8\uff1a\u6ce2\u52a8\u7387\u6392\u540d\u4e0e\u975e\u6d41\u52a8\u6027\u6392\u540d\u7684\u4e58\u79ef(\u53cc\u91cd\u98ce\u9669\u5171\u632f)",
+      "en": "vol-illiquidity regime: product of the volatility rank and the illiquidity rank (compounded-risk regime)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 6e-05,
+          "valid_ic": 0.00081
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 1e-05,
+          "valid_ic": 0.00067
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00042,
+          "valid_ic": 0.00343
+        }
+      ]
+    },
+    {
+      "idea": "momentum_x_efficiency",
+      "variant": null,
+      "category": "interaction",
+      "col": "momentum_x_efficiency",
+      "zh": "\u52a8\u91cfx\u6548\u7387\uff1a\u52a8\u91cf\u4fe1\u53f7\u4e58\u4ee5\u8d8b\u52bf\u6548\u7387(\u4ec5\u5728\u771f\u8d8b\u52bf\u4e2d\u653e\u5927\u52a8\u91cf)",
+      "en": "momentum x efficiency: momentum scaled by trend efficiency (amplified only in genuine trends)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00209,
+          "valid_ic": 0.00708
+        },
+        {
+          "name": "v2_processed",
+          "formula": "decile-bucket smoothing (classification, n=10)",
+          "train_ic": 0.00122,
+          "valid_ic": 0.0041
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "decile-bucket + group(g)-neutralized",
+          "train_ic": 0.00165,
+          "valid_ic": 0.00264
+        }
+      ]
+    },
+    {
+      "idea": "group_te_volume",
+      "variant": null,
+      "category": "volume",
+      "col": "group_te_volume",
+      "zh": "\u884c\u4e1a\u6210\u4ea4\u91cf\u76ee\u6807\u7f16\u7801\uff1a\u622a\u81f3\u524d\u4e00\u65e5\u7684\u7ec4\u5185\u5e73\u5747\u6210\u4ea4\u91cf(\u65e0\u6cc4\u6f0f)",
+      "en": "group volume target-encoding: expanding (day,g) mean volume up to the previous day (leak-free)",
+      "versions": [
+        {
+          "name": "v1_raw",
+          "formula": "per-day cross-sectional z-score",
+          "train_ic": 0.00141,
+          "valid_ic": 0.02223
+        },
+        {
+          "name": "v2_processed",
+          "formula": "EWMA(halflife=5)-smoothed z-score",
+          "train_ic": 0.00268,
+          "valid_ic": 0.01741
+        },
+        {
+          "name": "v3_optimized",
+          "formula": "EWMA-smoothed, group(g)-relative liquidity-neutralized",
+          "train_ic": -0.00091,
+          "valid_ic": 0.0024
+        }
+      ]
+    }
+  ]
+}

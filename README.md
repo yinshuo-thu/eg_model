@@ -99,12 +99,15 @@ all cross-sectional ops use only the same day.
 | --- | --- |
 | `tools/build_features.py` | leak-free feature pipeline → `artifacts/features.parquet` |
 | `ML_single/scripts/` | `common.py` (IO + daily-IC metric), `run_classic.py` (Ridge/ElasticNet/LightGBM), `run_mlp.py` |
-| `Transformer/scripts/run_transformer.py` | v3-lineage temporal Transformer |
+| `Transformer/v1/scripts/run_transformer.py` | v3-lineage temporal Transformer (v1 lineage; see `Transformer/review.md`) |
 | `ML_ensemble/scripts/run_ensemble.py` | per-day z-score blend + weights |
 | `tools/gen_figs.py` | report figures → `summary_assets/` |
 | `summary_src.html` / `summary.html` | bilingual report (editable source / self-contained build) |
 | `report/task2_section.html` | Task 2 — order-book / tick-signal answer |
 | `artifacts/` | `panel_raw.parquet`, `features.parquet`, `preds/`, `metrics/` |
+| `tools/build_new_factors.py` | 120-idea prc/vol factor mining + 3-round optimization + correlation pruning → `artifacts/new_factors.parquet` |
+| `common_docs/new_factors_report.md` | full new-factor formula + per-round IC ledger |
+| `*_nf.py` / `*_nf20.py` scripts | strict A/B retrain of the full stack on 213+111 (naive) vs. 213+20 (curated) features |
 
 ## Reproduce
 
@@ -113,7 +116,7 @@ cd /root/autodl-tmp/eg_model
 python tools/build_features.py                 # 213 leak-free features
 python ML_single/scripts/run_classic.py        # Ridge / ElasticNet / LightGBM
 python ML_single/scripts/run_mlp.py            # multi-task MLP
-NSEED=8 python Transformer/scripts/run_transformer.py
+NSEED=8 python Transformer/v1/scripts/run_transformer.py
 python ML_ensemble/scripts/run_ensemble.py     # robust equal-weight blend
 python tools/gen_figs.py                        # figures
 ```
@@ -123,10 +126,29 @@ python tools/gen_figs.py                        # figures
 
 ---
 
+## New Features — 100+ prc/vol factor ideas (§4 of the report)
+
+`tools/build_new_factors.py` mines the raw `prc1…prc5` / `vol0` columns for **120
+distinct economic/statistical ideas** (125 parameter variants), each pushed through a
+uniform 3-round optimization ladder (raw z-score → processing → group-neutral /
+residual-regression / classification-bucket optimization) and pruned for cross-idea
+correlation (>0.8 dropped) down to **108 kept ideas / 111 factor columns**. Full
+formulas + per-round IC ledger: [`common_docs/new_factors_report.md`](common_docs/new_factors_report.md).
+
+Retraining the full stack (`*_nf.py` / `*_nf20.py` scripts, unmodified hyperparameters)
+found an honest result: dumping all 111 factors in **dilutes** test IC (0.0602→0.0592,
+noise from the many individually-weak columns), while truncating to the **top-20 by
+train IC** (`tools/ablate_topk_factors.py`) holds IC ~flat (0.0602→0.0595) and lifts
+**test IR from 0.931 to 1.106 (+18.8%)** — the new factors are decorrelated increments
+that improve ensemble diversity, not standalone alpha, exactly as `feature_raw_data.md`
+predicted. Production feature list: `artifacts/feature_list_nf20.json`.
+
+---
+
 ## Task 2 — order-book & tick signals
 
 The open-ended Task 2 (deriving tick/minute signals from L2 book + message stream to
-forecast 30-minute forward mid-price return) is answered in §5 of the report —
+forecast 30-minute forward mid-price return) is answered in §6 of the report —
 order-flow imbalance / microprice / cancel-toxicity / Hawkes intensity, the
 event-vs-clock-time feature pipeline, deep-book (levels 2–10) exploitation,
 trade/add/cancel decomposition, and leakage-safe validation — all bridging back into

@@ -1,0 +1,2 @@
+model,valid_IC,valid_IR,valid_spear,valid_pos,test_IC,test_IR,test_spear,test_pos
+transformer_nf,0.06141,0.949,0.05205,0.792,0.05649,0.863,0.057,0.805

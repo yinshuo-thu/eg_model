@@ -1,0 +1,17 @@
+{
+  "members": [
+    "lightgbm_dart_nf",
+    "lightgbm_huber_nf",
+    "lightgbm_l1_nf",
+    "mlp_nf",
+    "transformer_nf"
+  ],
+  "weights": [
+    0.4110512963319923,
+    0.0,
+    0.03019756568816941,
+    0.2819894253405421,
+    0.2767617126392963
+  ],
+  "neut_alpha": 0.35
+}

@@ -1,6 +1,8 @@
 # ---- large data / derived artifacts (regenerable; not for git) ----
 artifacts/features.parquet
+artifacts/features_nf.parquet
 artifacts/panel_raw.parquet
+artifacts/new_factors.parquet
 artifacts/preds/*.parquet
 artifacts/preds/*.npy
 # raw data (per NDA, never committed)
@@ -8,7 +10,7 @@ data.csv
 *.csv.gz
 
 # ---- model checkpoints (large binaries) ----
-Transformer/weights/
+Transformer/*/weights/
 **/weights/*.pt
 **/weights/*.pth
 **/*.ckpt

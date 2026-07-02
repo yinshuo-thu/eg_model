@@ -1,0 +1,2 @@
+model,valid_IC,valid_IR,valid_spear,valid_pos,test_IC,test_IR,test_spear,test_pos
+mlp_nf,0.06378,0.849,0.05867,0.783,0.05488,0.769,0.05586,0.776

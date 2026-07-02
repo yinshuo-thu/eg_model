@@ -4,7 +4,7 @@ Copied (unmodified in spirit) from the original trainers so the submit package
 is self-contained and does not import from the source trees:
   * MTMLP      -- multi-task DCN-style MLP           (ML_single/scripts/run_mlp.py)
   * EGTransformer -- v3-lineage daily temporal Transformer
-                    (Transformer/scripts/run_transformer.py)
+                    (Transformer/v1/scripts/run_transformer.py)
 
 Both carry a main (y_xs), sign and magnitude head; only the main head is used at
 inference.

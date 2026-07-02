@@ -1,0 +1,17 @@
+{
+  "members": [
+    "lightgbm_dart_nf20",
+    "lightgbm_huber_nf20",
+    "lightgbm_l1_nf20",
+    "mlp_nf20",
+    "transformer_nf20"
+  ],
+  "weights": [
+    0.4189423038624122,
+    0.0,
+    0.046272925414127586,
+    0.33626720305357405,
+    0.1985175676698861
+  ],
+  "neut_alpha": 0.3
+}

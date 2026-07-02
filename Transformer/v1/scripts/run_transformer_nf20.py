@@ -1,4 +1,10 @@
-"""EG temporal+CROSS-SECTIONAL Transformer v3.
+"""EG temporal+CROSS-SECTIONAL Transformer, NEW-FEATURES (nf) variant.
+
+Identical architecture/training loop to run_transformer_v3.py -- only the input
+feature set changes (213 original + surviving new prc/vol factors, via
+common_nf.py), to isolate the lift from the new factors alone.
+
+Original docstring (run_transformer_v3.py):
 
 The eval metric is per-day cross-sectional IC, but run_transformer*.py encode each
 instrument's K-day history INDEPENDENTLY. v3 adds a genuine cross-sectional stage:
@@ -25,7 +31,7 @@ import sys, os, time, math
 from pathlib import Path
 import numpy as np, pandas as pd, torch, torch.nn as nn, torch.nn.functional as F
 sys.path.insert(0, str(Path("/root/autodl-tmp/eg_model/ML_single/scripts")))
-from common import load, feature_cols, evaluate, print_row
+from common_nf20 import load, feature_cols, evaluate, print_row
 
 DEV = "cuda" if torch.cuda.is_available() else "cpu"
 ROOT = Path("/root/autodl-tmp/eg_model")
@@ -45,8 +51,8 @@ WD       = float(env("WD", "1e-4"))
 WARMUP   = float(env("WARMUP", "0.05"))
 PATIENCE = int(env("PATIENCE", "6"))
 EMA      = float(env("EMA", "0.0"))
-TAG      = env("TAG", "transformer_v3")
-OUTPRED  = env("OUTPRED", "transformer_v3")
+TAG      = env("TAG", "transformer_nf20")
+OUTPRED  = env("OUTPRED", "transformer_nf20")
 SAVESEEDS= int(env("SAVESEEDS", "0"))
 SEED0    = int(env("SEED0", "0"))
 DPS      = int(env("DPS", "4"))        # days per optimizer step (cross-sec attention is per-day)
@@ -268,7 +274,7 @@ def main():
     r = evaluate(out, TAG); print_row(r)
     out[out.split.isin(["valid", "test"])][["day", "instrument_id", "split", "y", "pred"]].to_parquet(
         ROOT / "artifacts" / "preds" / f"{OUTPRED}.parquet", index=False)
-    lb = ROOT / "Transformer" / "metrics" / "leaderboard_v2.csv"
+    lb = ROOT / "Transformer" / "v1" / "metrics" / "leaderboard_nf20.csv"
     row = pd.DataFrame([r])
     if lb.exists(): row = pd.concat([pd.read_csv(lb), row], ignore_index=True)
     row.to_csv(lb, index=False)

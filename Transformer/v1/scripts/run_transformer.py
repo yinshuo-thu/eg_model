@@ -177,8 +177,8 @@ def main():
     r = evaluate(out, "transformer"); print_row(r)
     out[out.split.isin(["valid", "test"])][["day", "instrument_id", "split", "y", "pred"]].to_parquet(
         ROOT / "artifacts" / "preds" / "transformer.parquet", index=False)
-    (ROOT / "Transformer" / "metrics" / "leaderboard.csv").parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame([r]).to_csv(ROOT / "Transformer" / "metrics" / "leaderboard.csv", index=False)
+    (ROOT / "Transformer" / "v1" / "metrics" / "leaderboard.csv").parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([r]).to_csv(ROOT / "Transformer" / "v1" / "metrics" / "leaderboard.csv", index=False)
     print(f"[xfmr] done in {time.time()-t0:.0f}s", flush=True)
 
 

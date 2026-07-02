@@ -94,7 +94,7 @@ def main():
     # leaderboard row(s): raw blend + final neutralized
     r_raw = evaluate(m.assign(pred=m["blend"]), "v2_diverseblend_raw")
     r_fin = evaluate(m.assign(pred=m["pred"]), f"v2_diverseblend_neutA{a:.2f}")
-    lb_path = ROOT / "Transformer" / "metrics" / "leaderboard_v2.csv"
+    lb_path = ROOT / "Transformer" / "v1" / "metrics" / "leaderboard_v2.csv"
     old = pd.read_csv(lb_path) if lb_path.exists() else pd.DataFrame()
     new = pd.concat([old, pd.DataFrame([r_raw, r_fin])], ignore_index=True)
     new.to_csv(lb_path, index=False)

@@ -1,0 +1,2 @@
+model,valid_IC,valid_IR,valid_spear,valid_pos,test_IC,test_IR,test_spear,test_pos
+transformer_nf20,0.06224,0.88,0.05639,0.8,0.05847,0.867,0.05934,0.799

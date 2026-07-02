@@ -1,0 +1,5 @@
+model,valid_IC,valid_IR,test_IC,test_IR,detail
+ref_equal3_nf,0.06504,0.945,0.05882,0.905,"equal ['lightgbm', 'mlp_nf', 'transformer_nf']"
+div3_nf,0.06484,0.948,0.05886,0.914,"w={'lightgbm': 0.388, 'mlp_nf': 0.29, 'transformer_nf': 0.322}"
+divN_nf,0.06459,0.99,0.05907,0.973,"w={'lightgbm_dart_nf': 0.411, 'lightgbm_huber_nf': 0.0, 'lightgbm_l1_nf': 0.03, 'mlp_nf': 0.282, 'transformer_nf': 0.277}"
+FINAL ensemble_nf (divN+neutG),0.06541,1.128,0.05923,1.079,"alpha=0.35  members=['lightgbm_dart_nf', 'lightgbm_huber_nf', 'lightgbm_l1_nf', 'mlp_nf', 'transformer_nf']  w={'lightgbm_dart_nf': 0.411, 'lightgbm_huber_nf': 0.0, 'lightgbm_l1_nf': 0.03, 'mlp_nf': 0.282, 'transformer_nf': 0.277}"

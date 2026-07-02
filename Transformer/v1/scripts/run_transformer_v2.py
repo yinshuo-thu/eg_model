@@ -323,7 +323,7 @@ def main():
     r = evaluate(out, TAG); print_row(r)
     out[out.split.isin(["valid", "test"])][["day", "instrument_id", "split", "y", "pred"]].to_parquet(
         ROOT / "artifacts" / "preds" / f"{OUTPRED}.parquet", index=False)
-    lb = ROOT / "Transformer" / "metrics" / "leaderboard_v2.csv"
+    lb = ROOT / "Transformer" / "v1" / "metrics" / "leaderboard_v2.csv"
     lb.parent.mkdir(parents=True, exist_ok=True)
     row = pd.DataFrame([r])
     if lb.exists():
