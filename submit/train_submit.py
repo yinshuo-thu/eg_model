@@ -280,11 +280,19 @@ def main():
         print(f"[train] SMOKE slice: days >= {MIN_DAY}", flush=True)
     print(f"[train] raw {raw.shape}  days {raw['day'].min()}-{raw['day'].max()}", flush=True)
 
-    print("[train] building 213 causal features (fit mode)", flush=True)
+    print("[train] building/loading 263 features (213 base + 50 genalpha factors, fit mode)", flush=True)
     tf = time.time()
-    feat, artifacts = compute_features(raw, artifacts=None)
+    import genalpha
+    CACHE = ROOT / "artifacts" / "genalpha_263.parquet"
+    ACACHE = ROOT / "artifacts" / "genalpha_artifacts.json"
+    if MIN_DAY == 0 and CACHE.exists() and ACACHE.exists():
+        feat = pd.read_parquet(CACHE)
+        artifacts = json.load(open(ACACHE))
+        fcols = artifacts["feature_list_263"]
+        print(f"[train] loaded cached 263 features {feat.shape} ({len(fcols)} cols)", flush=True)
+    else:
+        feat, artifacts, fcols = genalpha.compute_263(raw, artifacts=None)
     json.dump(artifacts, open(WDIR / "feature_artifacts.json", "w"))
-    fcols = artifacts["feature_list"]
     print(f"[train] features {feat.shape}  ({len(fcols)} cols) in {time.time()-tf:.0f}s", flush=True)
 
     day = feat["day"].to_numpy()

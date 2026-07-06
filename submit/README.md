@@ -1,144 +1,146 @@
-# Engineering-Gates OOS prediction package
+# EG Model — OOS Prediction Package (`submit/`)
 
-A deployable, self-contained ensemble that predicts a weak forward return signal
-`y` on a **daily cross-sectional panel** of instruments. It is the final,
-out-of-sample (OOS) build of the Engineering-Gates project: the same models and
-winning blend recipe used in research, **retrained on ALL labelled days (1..1259)**
-so that nothing is held out from the fit.
+A self-contained, **causal** alpha model for the Engineering-Gates take-home. It
+regenerates **263 leak-free features** (213 base + 50 curated `genalpha` factors)
+from the raw panel, runs a diversity-weighted **ensemble** of LightGBM + a
+multi-task MLP + a temporal Transformer, and emits the daily cross-sectional
+signal `y_hat`.
 
-The scored metric is the **mean daily cross-sectional Pearson IC** — the average,
-over days, of the within-day correlation between the prediction and the realised
-`y`. Only the *cross-sectional ranking per day* matters, so the package returns a
-per-day z-scored, blended and group-neutralised score `y_hat`.
+**The shipped weights are trained on ALL labelled days (1–1259)** — the whole
+`data.csv` — because the real score is out-of-sample. Nothing here is held out;
+every labelled row is used so the model is as strong as possible on your hidden
+OOS period.
 
-## What's inside
+---
 
-Three base models are blended:
+## Input schema (identical to `data.csv`)
 
-| model        | what it is                                                            |
-|--------------|-----------------------------------------------------------------------|
-| LightGBM     | tuned DART gradient-boosting, 5-seed bag (`weights/lgb_dart_seed*.txt`)|
-| MLP          | multi-task DCN-style tabular net, 6-seed bag (`weights/mlp_seed*.pt`)  |
-| Transformer  | v3-lineage daily temporal Transformer, K=32 lookback, 8-seed bag (`weights/xfmr_seed*.pt`) |
+A raw panel with the training columns — the same fields you already have:
 
-**Ensemble recipe** (fitted on the in-sample predictions, saved in
-`weights/ensemble_config.json`):
+| column | meaning |
+|---|---|
+| `day` | integer time index (chronological) |
+| `instrument_id` | instrument id (consistent across days) |
+| `x_0 … x_85` | 86 features |
+| `prc1 … prc5` | price-related columns |
+| `vol0` | volume column |
+| `g` | group id (`-1` = unclassified) |
+| `y` | target — **optional / may be withheld**; only used to pick which days to score, never in the computation |
 
-1. per-day z-score each base prediction,
-2. blend with **inverse-correlation "diversity" weights** over
-   {lightgbm, mlp, transformer},
-3. **partial group-`g` neutralisation**: `y_hat = perday_z(blend − α·groupmean_g(blend))`.
+Everything the model needs is derived from `x_0..x_85`, `prc1..prc5`, `vol0`, `g`.
+**`y` is never read to produce `y_hat`.**
 
-All 213 input features are **leak-free and causal** (temporal ops use only past
-days; cross-sectional ops use only the same day). The feature recipe's fit-time
-state (the strongest-`x` ranking and the 12 PCA loadings) is frozen in
-`weights/feature_artifacts.json`, so OOS rows get exactly the features the models
-were trained on.
+### History requirement
+Features and factors are causal (per-instrument temporal windows + supervised
+factors that use only *past* `y`). Each instrument you want scored needs enough
+**prior history** in the panel: hard floor **K = 32 days** (the Transformer's
+lookback) plus rolling/EWM warm-up. **Pass the entire panel you have** (all of
+`1..1259` plus the new OOS rows) — the supervised factors freeze their state at
+the last labelled day, so unlabelled OOS rows never read their own or any future
+`y`.
 
-## Install
-
-```bash
-pip install -r submit/requirements.txt
-```
-
-Requires: pandas, numpy, pyarrow, lightgbm, torch, scikit-learn. A CUDA GPU is
-used automatically if available (falls back to CPU).
-
-## Input schema
-
-A **raw panel** DataFrame / parquet / csv with the *same schema as training*:
-
-```
-day            int    trading day index
-instrument_id  int    instrument id
-x_0 .. x_85    float  86 raw features
-prc1 .. prc5   float  price snapshots
-vol0           float  volume
-g              int    group id
-y              float  forward return  (OPTIONAL — may be absent/NaN for the days you predict)
-```
-
-### History requirement (important)
-
-The features are causal and the Transformer looks back **K=32 days**, so to
-predict day `t` you must also supply the **prior days** for those instruments.
-
-* Provide **at least ~60 prior days of history** before the first day you want
-  predicted (Transformer needs 32 days; the rolling features warm up over ~20).
-* **More history is better.** Passing the entire available history makes the
-  group target-encoding feature exact. Instruments/days without a full K-day
-  lookback are skipped (a warning is printed).
-
-## Usage
-
-### Python API
-
-```python
-import pandas as pd
-from submit.predict import predict          # or: import predict (from inside submit/)
-
-panel = pd.read_parquet("my_panel.parquet") # history + the days to predict
-preds = predict(panel)                       # -> DataFrame[day, instrument_id, y_hat]
-```
-
-Choosing which days to score:
-
-* `predict(panel)` — if `y` is present with both observed **and** missing values,
-  it scores the days that contain missing `y` (the OOS rows). If there is no `y`
-  (or it is all-NaN), it scores **every** day that has a full K-day lookback.
-* `predict(panel, predict_days=[1260, 1261])` — score exactly those days.
-
-### CLI
-
-```bash
-python submit/predict.py --input my_panel.parquet --output preds.parquet
-# optional: --days 1260,1261    --weights submit/weights
-```
-
-`--input`/`--output` accept `.parquet` or `.csv`.
+---
 
 ## Output
 
-One row per predicted `(day, instrument_id)`:
+`predict(df) -> DataFrame[day, instrument_id, y_hat]`, one row per scored
+`(day, instrument_id)`. The metric is the **mean daily cross-sectional Pearson
+IC**, so only the **per-day ranking** of `y_hat` matters (it is per-day
+z-scored; level/scale are irrelevant).
 
-```
-day  instrument_id  y_hat
-```
+---
 
-`y_hat` is the final ensemble signal — **per-day z-scored, diversity-blended and
-group-neutralised**. Higher `y_hat` = more positive expected forward return.
-Scores are only comparable *within a day* (that is what the daily-IC metric
-rewards); there is no meaningful cross-day scale.
+## Quickstart
 
-## Re-training
-
-To rebuild every weight from the raw panel (`artifacts/panel_raw.parquet`):
-
+### CLI
 ```bash
-python submit/train_submit.py
+# default = ensemble
+python submit/predict.py --input oos_panel.parquet --output preds.parquet
+
+# a specific sub-model instead of the ensemble
+python submit/predict.py --input oos_panel.parquet --output preds.parquet --model transformer
+
+# only score specific days
+python submit/predict.py --input panel.parquet --output preds.parquet --days 1260,1261,1262
+
+# force CPU (e.g. if the GPU is busy/small) — or set EG_DEVICE=cpu
+python submit/predict.py --input panel.parquet --output preds.parquet --device cpu
+```
+`--input` / `--output` accept `.parquet` or `.csv`. Device is auto (GPU if
+available) unless `--device cpu` / `EG_DEVICE=cpu` is set; the neural nets fit
+comfortably on CPU.
+
+### Python
+```python
+from submit.predict import predict
+import pandas as pd
+
+df   = pd.read_parquet("oos_panel.parquet")     # raw schema above, y withheld
+yhat = predict(df)                               # ensemble (default)
+yhat = predict(df, model="lightgbm")             # or a sub-model
+# yhat: columns [day, instrument_id, y_hat]
 ```
 
-This recomputes the 213 causal features (fit mode), trains the LightGBM DART bag,
-the MLP bag and the Transformer bag on **all labelled days**, fits the diversity
-weights + neutralisation-α on the in-sample predictions, and writes everything to
-`submit/weights/`. A GPU is strongly recommended. A tiny random slice of days is
-held out **only** as an early-stopping monitor for the neural nets; LightGBM uses
-a fixed round budget.
+### Choosing the model (`--model` / `model=`)
+| value | signal |
+|---|---|
+| `ensemble` *(default)* | diversity-weighted, group-neutralised blend of all three families — **the recommended model** |
+| `lightgbm` | LightGBM-DART seed-bag only (per-day z-scored) |
+| `mlp` | multi-task DCN-MLP seed-bag only |
+| `transformer` | temporal Transformer seed-bag only |
+
+Omit `--model` to get the ensemble.
+
+---
+
+## How it works (causal, leak-free)
+
+1. **`genalpha.compute_263(panel)`** rebuilds the 263 features from raw:
+   - 213 base features (`features_core.py`): per-day cross-sectional z-scores,
+     per-instrument temporal lags/momentum/rolling stats, group aggregates &
+     leak-free expanding target-encoding, and 12 cross-sectional PCA factors
+     (frozen loadings).
+   - 50 curated `genalpha` factors (`genalpha/factors_*.py`): characteristic-
+     payoff timing, payoff-weighted pair quadratics, IC-weighted composites,
+     supervised ridge/tilt, group-payoff, feature-family composites, etc. — every
+     one recomputed from raw with **supervised state frozen on unlabelled days**.
+2. Each family's frozen models score the rows; each family is **per-day
+   z-scored**, blended with **diversity (inverse-correlation) weights**, then
+   **group-`g` neutralised** — parameters frozen from the in-sample fit.
+
+All learned parameters (model weights, blend weights, neutralisation α, PCA
+loadings, supervised factor states) are **fixed at training time**; no OOS label
+is ever used.
+
+---
+
+## Reproduce the training
+```bash
+python submit/train_submit.py        # retrains on all labelled days -> submit/weights/
+```
+Reads the raw panel, builds the 263 features (fit mode), trains the LightGBM /
+MLP / Transformer seed bags, fits the ensemble config, and writes everything to
+`submit/weights/`.
+
+---
 
 ## Files
-
 ```
 submit/
-├── predict.py             callable inference API + CLI
-├── train_submit.py        full-in-sample retraining
-├── features_core.py       causal 213-feature engineering (fit / apply)
-├── models.py              MLP + Transformer definitions
-├── requirements.txt
-├── README.md
-└── weights/
-    ├── feature_artifacts.json   top_x ranking + PCA loadings + feature order
-    ├── ensemble_config.json     diversity weights + neutralisation α + K
-    ├── lgb_dart_seed{0..4}.txt  LightGBM boosters
-    ├── mlp_seed{0..5}.pt        MLP state_dicts
-    └── xfmr_seed{0..7}.pt       Transformer state_dicts
+  predict.py            # predict(df, model=...) -> [day, instrument_id, y_hat]  (+ CLI)
+  train_submit.py       # retrain all models on all labelled days
+  features_core.py      # 213 causal base features (fit/apply, frozen artifacts)
+  genalpha/             # the 50 curated factors, regenerated from raw
+    __init__.py         #   compute_263(panel) -> 263-feature matrix
+    core.py             #   Ctx: causal primitive toolkit over any panel
+    factors_*.py        #   the factor families
+    confpos50.json      #   the 50 factor names (report-canonical order)
+  models.py             # MTMLP + EGTransformer definitions
+  weights/              # frozen: lgb_dart_seed*.txt, mlp_seed*.pt, xfmr_seed*.pt,
+                        #         feature_artifacts.json, ensemble_config.json
+  requirements.txt
 ```
+
+## Requirements
+See `requirements.txt` (numpy, pandas, pyarrow, scikit-learn, lightgbm, torch).
+A GPU is used if available for the neural nets; CPU works (slower).

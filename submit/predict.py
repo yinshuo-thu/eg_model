@@ -36,6 +36,7 @@ CLI
 from __future__ import annotations
 import argparse
 import json
+import os
 from pathlib import Path
 
 import numpy as np
@@ -46,11 +47,13 @@ import lightgbm as lgb
 HERE = Path(__file__).resolve().parent
 import sys
 sys.path.insert(0, str(HERE))
-from features_core import compute_features
+import genalpha
 from models import MTMLP, EGTransformer
 
 WDIR = HERE / "weights"
-DEV = "cuda" if torch.cuda.is_available() else "cpu"
+# device: env EG_DEVICE ('cpu'/'cuda') overrides; else auto. Lets an evaluator
+# force CPU when the GPU is busy/small (the neural nets fit easily on CPU).
+DEV = os.environ.get("EG_DEVICE") or ("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def _per_day_z(vals, day):
@@ -65,7 +68,7 @@ class Predictor:
         self.device = device
         self.artifacts = json.load(open(self.wdir / "feature_artifacts.json"))
         self.cfg = json.load(open(self.wdir / "ensemble_config.json"))
-        self.fcols = self.artifacts["feature_list"]
+        self.fcols = self.artifacts.get("feature_list_263", self.artifacts["feature_list"])
         self.Fn = len(self.fcols)
         self.K = int(self.cfg.get("K", 32))
         self.families = self.cfg["families"]
@@ -148,8 +151,15 @@ class Predictor:
         return {(int(iv), int(dv)): float(pv) for iv, dv, pv in zip(inst_of, day_of, acc)}
 
     # ------------------------------------------------------------------ public
-    def predict(self, panel_df: pd.DataFrame, predict_days=None) -> pd.DataFrame:
-        feat, _ = compute_features(panel_df, artifacts=self.artifacts)
+    def predict(self, panel_df: pd.DataFrame, predict_days=None,
+                model: str = "ensemble") -> pd.DataFrame:
+        """model: 'ensemble' (default, the diversity-weighted group-neutralised
+        blend of all families) or a single sub-model 'lightgbm' / 'mlp' /
+        'transformer' (per-day z-scored). Any other value raises."""
+        allowed = {"ensemble"} | set(self.families)
+        if model not in allowed:
+            raise ValueError(f"model={model!r}; choose one of {sorted(allowed)}")
+        feat, _, _ = genalpha.compute_263(panel_df, artifacts=self.artifacts)
 
         # ---- decide which days to score ----
         udays = np.sort(feat["day"].unique())
@@ -185,16 +195,19 @@ class Predictor:
                   f"history (Transformer needs >= K={self.K} prior days)", flush=True)
         sub = sub.loc[ok].reset_index(drop=True)
 
-        # ---- per-day z-score each base pred, diversity blend ----
-        Z = np.column_stack([_per_day_z(sub[f].to_numpy(), sub["day"].to_numpy())
-                             for f in self.families])
-        blend = (Z * self.weights).sum(1)
-        sub["_blend"] = blend
-
-        # ---- group-g neutralisation, then per-day z ----
-        gm = sub.groupby(["day", "g"])["_blend"].transform("mean")
-        r = sub["_blend"] - self.alpha * gm
-        sub["y_hat"] = _per_day_z(r.to_numpy(), sub["day"].to_numpy())
+        if model != "ensemble":
+            # single sub-model: per-day z-score of that family (only ranking matters)
+            sub["y_hat"] = _per_day_z(sub[model].to_numpy(), sub["day"].to_numpy())
+        else:
+            # ---- per-day z-score each base pred, diversity blend ----
+            Z = np.column_stack([_per_day_z(sub[f].to_numpy(), sub["day"].to_numpy())
+                                 for f in self.families])
+            blend = (Z * self.weights).sum(1)
+            sub["_blend"] = blend
+            # ---- group-g neutralisation, then per-day z ----
+            gm = sub.groupby(["day", "g"])["_blend"].transform("mean")
+            r = sub["_blend"] - self.alpha * gm
+            sub["y_hat"] = _per_day_z(r.to_numpy(), sub["day"].to_numpy())
 
         out = sub[["day", "instrument_id", "y_hat"]].copy()
         out = out.sort_values(["day", "instrument_id"]).reset_index(drop=True)
@@ -205,12 +218,17 @@ _PREDICTOR: Predictor | None = None
 
 
 def predict(panel_df: pd.DataFrame, predict_days=None,
-            weights_dir: str | Path = WDIR) -> pd.DataFrame:
-    """Module-level convenience wrapper (caches the loaded models)."""
+            weights_dir: str | Path = WDIR, model: str = "ensemble",
+            device: str | None = None) -> pd.DataFrame:
+    """Module-level convenience wrapper (caches the loaded models).
+    model: 'ensemble' (default) | 'lightgbm' | 'mlp' | 'transformer'.
+    device: None -> auto (env EG_DEVICE or cuda-if-available); or 'cpu' / 'cuda'."""
     global _PREDICTOR
-    if _PREDICTOR is None or Path(_PREDICTOR.wdir) != Path(weights_dir):
-        _PREDICTOR = Predictor(weights_dir)
-    return _PREDICTOR.predict(panel_df, predict_days=predict_days)
+    dev = device or DEV
+    if (_PREDICTOR is None or Path(_PREDICTOR.wdir) != Path(weights_dir)
+            or _PREDICTOR.device != dev):
+        _PREDICTOR = Predictor(weights_dir, device=dev)
+    return _PREDICTOR.predict(panel_df, predict_days=predict_days, model=model)
 
 
 def _main():
@@ -219,12 +237,18 @@ def _main():
     ap.add_argument("--output", required=True, help="output path (.parquet or .csv)")
     ap.add_argument("--days", default=None, help="comma-separated day values to predict (optional)")
     ap.add_argument("--weights", default=str(WDIR), help="weights directory")
+    ap.add_argument("--model", default="ensemble",
+                    choices=["ensemble", "lightgbm", "mlp", "transformer"],
+                    help="which model's signal to output (default: ensemble)")
+    ap.add_argument("--device", default=None, choices=["cpu", "cuda"],
+                    help="force compute device (default: auto / env EG_DEVICE)")
     args = ap.parse_args()
 
     inp = Path(args.input)
     df = pd.read_csv(inp) if inp.suffix == ".csv" else pd.read_parquet(inp)
     days = [int(d) for d in args.days.split(",")] if args.days else None
-    out = predict(df, predict_days=days, weights_dir=args.weights)
+    out = predict(df, predict_days=days, weights_dir=args.weights,
+                  model=args.model, device=args.device)
 
     outp = Path(args.output)
     if outp.suffix == ".csv":
