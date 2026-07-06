@@ -143,6 +143,16 @@ train IC** (`tools/ablate_topk_factors.py`) holds IC ~flat (0.0602→0.0595) and
 that improve ensemble diversity, not standalone alpha, exactly as `feature_raw_data.md`
 predicted. Production feature list: `artifacts/feature_list_nf20.json`.
 
+### Round-3 55-factor retrain
+
+The stricter round-3 mining pass produced 55 factors with train |IC| > 0.008 and
+max pairwise correlation < 0.8 against the full existing pool. Appending all 55
+to the current 213+10 stack and retraining unchanged models did **not** improve
+the held-out test: Transformer raw/neutralized scored **0.05357/0.798** and
+**0.05373/1.002** (IC/IR); Ensemble raw/processed scored **0.05613/0.852** and
+**0.05697/1.021**. The full 278-feature block is retained as an experiment, not
+promoted. See report §4.4 and `summary_assets/fig_v3f_retrain.png`.
+
 ---
 
 ## Task 2 — order-book & tick signals

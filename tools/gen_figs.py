@@ -18,8 +18,9 @@ plt.rcParams.update({
     "grid.color": "#e6e8eb", "grid.linewidth": 0.8, "legend.frameon": False,
     "figure.facecolor": "white", "axes.facecolor": "white",
 })
+import os
 ROOT = Path("/root/autodl-tmp/eg_model")
-PRE = ROOT / "artifacts" / "preds"
+PRE = Path(os.environ.get("PREDS_DIR", ROOT / "artifacts" / "preds"))
 OUT = ROOT / "summary_assets"; OUT.mkdir(exist_ok=True)
 BASE_IC, BASE_IR = 0.056, 1.1
 C = {"ridge": "#94a3b8", "elasticnet": "#cbd5e1", "lightgbm_l1": "#38bdf8",

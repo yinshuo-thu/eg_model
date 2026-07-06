@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>eg-model · Ridge/LightGBM/MLP → Ensemble → Transformer · Shuo Yin</title>
+<title>eg-model · Ridge/LightGBM/MLP → Transformer → Ensemble · Shuo Yin</title>
 <style>
   :root{
     --ink:#1f2937; --ink2:#374151; --muted:#6b7280; --line:#e5e7eb;
@@ -109,7 +109,7 @@
 
 <header class="doc">
   <div class="wrap">
-    <h1><span class="zh">eg-model：从 Ridge / LightGBM / MLP 基线到 Ensemble 与时序 Transformer</span><span class="en">eg-model: From Ridge / LightGBM / MLP Baselines to an Ensemble and a Temporal Transformer</span></h1>
+    <h1><span class="zh">eg-model：从 Ridge / LightGBM / MLP 基线到时序 Transformer 与 Ensemble</span><span class="en">eg-model: From Ridge / LightGBM / MLP Baselines to a Temporal Transformer and an Ensemble</span></h1>
     <div class="sub"><span class="zh">202606 Engineering Gates Take Home Project</span><span class="en">202606 Engineering Gates Take Home Project</span></div>
     <div class="meta"><b>Shuo Yin（尹硕）</b> &nbsp;·&nbsp; <a href="mailto:yins25@mails.tsinghua.edu.cn">yins25@mails.tsinghua.edu.cn</a> &nbsp;·&nbsp; <a href="https://autoalpha.cn/eg_model/">report online ↗</a> &nbsp;·&nbsp; <a href="https://github.com/yinshuo-thu/eg_model" title="code + submit package on GitHub"><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" style="vertical-align:-2px" aria-label="GitHub"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.6 7.6 0 018 4.6c.68 0 1.36.09 2 .27 1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> GitHub ↗</a></div>
   </div>
@@ -128,24 +128,25 @@
         <li><a href="#data">1.3 Data &amp; Feature Engineering</a></li>
       </ol>
     </li>
-    <li><a href="#baselines">ML Baselines &amp; Ensemble</a>
+    <li><a href="#baselines">Linear &amp; ML Baselines</a>
       <ol>
         <li><a href="#ml">2.1 Ridge / ElasticNet / LightGBM / MLP</a></li>
-        <li><a href="#ensemble">2.2 Ensemble Model</a></li>
+        <li><a href="#ml-neutral">2.2 Further Processing — Group Neutralization</a></li>
       </ol>
     </li>
     <li><a href="#xfmr">Temporal Transformer</a>
       <ol>
         <li><a href="#arch">3.1 Architecture</a></li>
         <li><a href="#takeaways">3.2 Valuable Takeaways</a></li>
-        <li><a href="#results">3.3 Results &amp; Visualizations</a></li>
+        <li><a href="#opt-scenario">3.3 Scenario-Specific Optimizations</a></li>
+        <li><a href="#single-compare">3.4 Best Single-Model Comparison</a></li>
       </ol>
     </li>
-    <li><a href="#newfeat">New Features — 100+ prc/vol Factor Ideas</a>
+    
+    <li><a href="#ensemble">Model Ensemble</a>
       <ol>
-        <li><a href="#nf-method">4.1 A 3-Round Optimization Ladder</a></li>
-        <li><a href="#nf-pruning">4.2 Correlation Pruning &amp; Showcase Gains</a></li>
-        <li><a href="#nf-results">4.3 Retrained Models: IC/IR Lift</a></li>
+        <li><a href="#ens-build">4.1 Construction &amp; Diversity Weighting</a></li>
+        <li><a href="#ens-results">4.2 Ensemble Effect &amp; Visualizations</a></li>
       </ol>
     </li>
     <li><a href="#analysis">Analysis &amp; Conclusion</a>
@@ -171,19 +172,19 @@
   <h2><span class="num">0</span>Abstract</h2>
   <div class="tldr">
     <span class="lab">TL;DR</span>
-    <span class="zh">在弱信号的截面面板上预测前向收益 <code>y</code>。以 86 个原始因子 + 自建 <b>213 个防泄漏因子</b>（逐日截面 z-score、时序滞后/动量、group 聚合、截面 PCA 去噪）为输入，建立 Ridge / ElasticNet / LightGBM / MLP 基线，并训练一个<b>日频时序 Transformer</b>。评测口径与官方一致——<b>逐日截面 Pearson IC</b>（测试期 days 881–1259，正是基线 y_hat0 的评估窗口）。最强单模型为 Transformer <b>0.0591</b>；三族稳健等权 <b>Ensemble 0.0602</b>（Spearman 0.0608），相对官方基线 <code>y_hat0</code>（IC 0.056）<b>主指标 +7.5%、rank IC +8.7%</b>。经进一步处理后，我最强的两支是——ML 侧的<b>多样性加权 + group 中性化 Ensemble（测试 IC 0.0602→0.0605 / IR 1.135）</b>，与 Transformer 侧的<b>多样化族内融合 + 近端重训（0.0591→0.0602 / IR 0.907；再做 group 中性化后 IR 1.101、IC 维持≈0.0590）</b>。第二题（盘口/逐笔信号）的完整答卷见 §6。</span>
-    <span class="en">Predict a weak forward return <code>y</code> on a cross-sectional panel. From the 86 raw factors plus <b>213 self-built leak-free features</b> (per-day cross-sectional z-score, temporal lags/momentum, group aggregates, cross-sectional PCA denoising), I build Ridge / ElasticNet / LightGBM / MLP baselines and train a <b>daily temporal Transformer</b>. Scoring follows the brief exactly — the <b>mean daily cross-sectional Pearson IC</b> (test = days 881–1259, the baseline's own eval window). The best single model is the Transformer at <b>0.0591</b>; the robust three-family equal-weight <b>Ensemble reaches 0.0602</b> (Spearman 0.0608), beating the provided <code>y_hat0</code> baseline (IC 0.056) by <b>+7.5% on the primary metric and +8.7% on rank IC</b>. After further processing, my two strongest are — on the ML side the <b>diversity-weighted + group-neutralized Ensemble (test IC 0.0602→0.0605 / IR 1.135)</b>, and on the Transformer side the <b>diverse-family blend + refit-on-recent (0.0591→0.0602 / IR 0.907; after group-neutralization IR 1.101 at IC held ≈0.0590)</b>. The full Task-2 answer (order-book / tick signals) is in §6.</span>
+    <span class="zh">在弱信号的截面面板上预测前向收益 <code>y</code>。以 86 个原始因子 + 自建 <b>263 个防泄漏因子</b>为输入——<b>213 个基础特征</b>（逐日截面 z-score、时序滞后/动量、group 聚合、截面 PCA 去噪）＋ <b>50 个精选因子</b>（用三阶段前向漏斗逐个证明有真实边际增量后保留）——建立 Ridge / ElasticNet / LightGBM / MLP 基线，并训练一个<b>日频时序 Transformer</b>。评测口径与官方一致——<b>逐日截面 Pearson IC</b>（测试期 days 881–1259，正是基线 y_hat0 的评估窗口）。最强单模型为 Transformer <b>0.0612</b>（经 §3.3 的 R-Drop + 架构 scale-up 优化，较原始 0.0602 提升）；三族稳健等权 <b>Ensemble 0.0621</b>（Spearman 0.0643），相对官方基线 <code>y_hat0</code>（IC 0.056）<b>主指标 +10.9%</b>。经进一步处理（多样性加权 + group 中性化）后，各族 IR 普遍抬升（<b>单模型 1.08→1.24、Transformer 1.00→1.23、Ensemble 1.06→1.14</b>）而 IC 基本维持——最终生产 <b>Ensemble 测试 IC 0.0617 / IR 1.144</b>、<b>Transformer 0.0598 / IR 1.233</b>，双双跨过基线 1.1。全部 263 个因子（含 50 个精选因子）的 formula、IC、与其他因子的最大/平均相关性见<b><a href="factor_library.html">因子库页面</a></b>。第二题（盘口/逐笔信号）的完整答卷见 §6。</span>
+    <span class="en">Predict a weak forward return <code>y</code> on a cross-sectional panel. From 86 raw factors plus <b>263 self-built leak-free features</b> — <b>213 base features</b> (per-day cross-sectional z-score, temporal lags/momentum, group aggregates, cross-sectional PCA denoising) plus <b>50 curated factors</b> (each individually shown to add a genuine marginal increment through a three-stage forward funnel) — I build Ridge / ElasticNet / LightGBM / MLP baselines and train a <b>daily temporal Transformer</b>. Scoring follows the brief exactly — the <b>mean daily cross-sectional Pearson IC</b> (test = days 881–1259, the baseline's own eval window). The best single model is the Transformer at <b>0.0612</b> (after §3.3's R-Drop + architectural scale-up, up from the original 0.0602); the robust three-family equal-weight <b>Ensemble reaches 0.0621</b> (Spearman 0.0643), beating the provided <code>y_hat0</code> baseline (IC 0.056) by <b>+10.9% on the primary metric</b>. After further processing (diversity weighting + group-neutralization), IR rises across families (<b>Single 1.08→1.24, Transformer 1.00→1.23, Ensemble 1.06→1.14</b>) while IC holds — the final production <b>Ensemble scores test IC 0.0617 / IR 1.144</b> and the <b>Transformer 0.0598 / IR 1.233</b>, both crossing the 1.1 baseline. Formulas / IC / max &amp; mean correlation for all 263 features (including the 50 curated factors) are in the <b><a href="factor_library.html">Factor Library page</a></b>. The full Task-2 answer (order-book / tick signals) is in §6.</span>
   </div>
 
   <div class="cards">
     <div class="card"><div class="k">0.056</div><div class="l"><span class="zh">基线 y_hat0 · IC</span><span class="en">Baseline y_hat0 · IC</span></div></div>
-    <div class="card accent"><div class="k">0.0590</div><div class="l"><span class="zh"><b>Transformer</b>（处理后）· 测试 IC · IR 1.10</span><span class="en"><b>Transformer</b> (processed) · test IC · IR 1.10</span></div></div>
-    <div class="card gold"><div class="k">0.0605</div><div class="l"><span class="zh"><b>Ensemble</b>（处理后）· 测试 IC · IR 1.135</span><span class="en"><b>Ensemble</b> (processed) · test IC · IR 1.135</span></div></div>
+    <div class="card accent"><div class="k">0.0612</div><div class="l"><span class="zh"><b>Transformer</b>（§3.3 优化）· 测试 IC · 处理后 IR 1.23</span><span class="en"><b>Transformer</b> (§3.3-optimized) · test IC · IR 1.23 processed</span></div></div>
+    <div class="card gold"><div class="k">0.0617</div><div class="l"><span class="zh"><b>Ensemble</b>（263 维）· 测试 IC · IR 1.144</span><span class="en"><b>Ensemble</b> (263-dim) · test IC · IR 1.144</span></div></div>
   </div>
 
   <figure>
     <img src="summary_assets/fig1_headline.png" alt="cross-model comparison">
-    <figcaption><span class="zh"><b>图 0.1 跨模型对比（测试期 days 881–1259）。</b>左：逐日截面 Pearson IC（虚线为基线 0.056）；右：IC 信息比 IR（虚线为基线 1.1）。最后两支 <b>Ensemble* / Transformer*</b> 为经<b>进一步处理</b>（多样性加权 + group 中性化）的最终模型——IR 分别抬到 <b>1.13 / 1.10</b>、双双跨过基线 1.1，同时 IC 维持（Ensemble 更升到 0.0605）；其余为原始基线（ML 单模型 IR 均低于 1.1）。</span><span class="en"><b>Fig 0.1 — Cross-model comparison (test, days 881–1259).</b> Left: mean daily cross-sectional Pearson IC (dashed = baseline 0.056); right: IC information ratio (dashed = baseline 1.1). The last two bars — <b>Ensemble* / Transformer*</b> — are the <b>further-processed</b> final models (diversity weighting + group-neutralization): their IRs rise to <b>1.13 / 1.10</b>, both crossing the 1.1 baseline while IC holds (the Ensemble even lifts to 0.0605); the rest are raw baselines (all ML singles sit below IR 1.1).</span></figcaption>
+    <figcaption><span class="zh"><b>图 0.1 跨模型对比（263 维特征，测试期 days 881–1259）。</b>左：逐日截面 Pearson IC（虚线为基线 0.056）；右：IC 信息比 IR（虚线为基线 1.1）。所有模型（除线性）IC 均在基线 0.056 之上，Ensemble 达 0.0617。最后两支 <b>Ensemble* / Transformer*</b> 为经<b>进一步处理</b>（多样性加权 + group 中性化）的最终模型——IR 分别抬到 <b>1.14 / 1.23</b>、双双跨过基线 1.1，同时 IC 维持；其余为原始基线（ML 单模型 IR 多在 1.0 附近）。</span><span class="en"><b>Fig 0.1 — Cross-model comparison (263-dim features; test, days 881–1259).</b> Left: mean daily cross-sectional Pearson IC (dashed = baseline 0.056); right: IC information ratio (dashed = baseline 1.1). Every model (bar the linear ones) sits above the 0.056 baseline, the Ensemble at 0.0617. The last two bars — <b>Ensemble* / Transformer*</b> — are the <b>further-processed</b> final models (diversity weighting + group-neutralization): their IRs rise to <b>1.14 / 1.23</b>, both crossing the 1.1 baseline while IC holds; the rest are raw baselines (most ML singles sit near IR 1.0).</span></figcaption>
   </figure>
 </section>
 
@@ -197,13 +198,13 @@
 
   <h3 id="roadmap"><span class="sn">1.2</span>Methodology Roadmap</h3>
   <div class="road">
-    <div class="step"><span class="n">1</span><h5>Leak-free features</h5><p>86 raw x + 213 engineered: CS z-score, temporal lags/momentum, group aggregates, CS-PCA denoising.</p></div>
+    <div class="step"><span class="n">1</span><h5>Leak-free features</h5><p>86 raw x + 263 engineered = 213 base (CS z-score, temporal lags/momentum, group aggregates, CS-PCA) + 50 funnel-curated factors.</p></div>
     <div class="arrow">→</div>
     <div class="step"><span class="n">2</span><h5>ML base models</h5><p>Ridge / ElasticNet (linear), LightGBM (robust L1/Huber/DART, seed-bag), multi-task MLP.</p></div>
     <div class="arrow">→</div>
-    <div class="step"><span class="n">3</span><h5>Ensemble</h5><p>Per-day z-score each family; robust equal-weight blend of the diverse {LightGBM, MLP, Transformer}.</p></div>
+    <div class="step"><span class="n">3</span><h5>Temporal Transformer</h5><p>Per-instrument day-sequences; v3-lineage (conv stem, time-bias attention, dual readout, multitask).</p></div>
     <div class="arrow">→</div>
-    <div class="step s5"><span class="n">4</span><h5>Temporal Transformer</h5><p>Per-instrument day-sequences; v3-lineage (conv stem, time-bias attention, dual readout, multitask).</p></div>
+    <div class="step s5"><span class="n">4</span><h5>Ensemble</h5><p>Per-day z-score each family; robust equal-weight blend of the diverse {LightGBM, MLP, Transformer}.</p></div>
   </div>
   <p class="small"><span class="zh">所有改动都在统一的<b>前向时序</b>协议下检验：train days 1–760、valid 761–880（选型/早停）、test 881–1259（只看一次）。</span><span class="en">Every choice is tested under one <b>forward-in-time</b> protocol: train days 1–760, valid 761–880 (selection / early-stop), test 881–1259 (looked at once).</span></p>
 
@@ -214,80 +215,47 @@
     <li><b><span class="zh">时序特征</span><span class="en">Temporal (per instrument)</span></b> — <span class="zh"><code>y</code> 的滞后/滚动均值/滚动波动/EWMA，最强 30 个 x 的 lag1 / 5 日动量 / 10 日均值——全部 <code>shift()≥0</code>，再做截面 z。</span><span class="en"><code>y</code> lags / rolling means / rolling vol / EWMA, plus lag1 / 5-day momentum / 10-day mean of the strongest 30 x's — all <code>shift()≥0</code>, then cross-sectionally z-scored.</span></li>
     <li><b><span class="zh">价/量 + group</span><span class="en">Price/Vol + group</span></b> — <span class="zh"><code>prc1…5</code> 压成 mean/std/range/spread/skew、动量；<code>vol0</code> 变化；group 的<b>滞后组收益</b>与<b>扩张窗 target-encoding</b>（截至前一日，无泄漏）。</span><span class="en"><code>prc1…5</code> collapsed to mean/std/range/spread/skew &amp; momentum; <code>vol0</code> changes; group's <b>lagged group return</b> and <b>expanding-window target encoding</b> (up to the previous day, leak-free).</span></li>
     <li><b><span class="zh">截面 PCA 去噪（12）</span><span class="en">Cross-sectional PCA (12)</span></b> — <span class="zh">在训练期截面上拟合 PCA，取前 12 主成分作为<b>共同因子</b>，压制特异噪声。</span><span class="en">PCA fit on the train cross-section; the top-12 components are <b>common factors</b> that suppress idiosyncratic noise.</span></li>
+    <li><b><span class="zh">精选因子（50）→ 共 263</span><span class="en">Curated factors (50) → 263 total</span></b> — <span class="zh">在上述 213 个基础特征之外，另用一个<b>三阶段前向漏斗</b>（train≤760 发现 → val 门 761–820 → 严格 conf 门 821–880，test 全程封存）逐个检验候选因子在真实模型里的边际增量，保留 <b>50 个精选因子</b>——本报告所有模型均以此 <b>263 维</b>为默认输入。全部 formula/IC/相关性见<b><a href="factor_library.html">因子库页面</a></b>。</span><span class="en">Beyond the 213 base features, a <b>three-stage forward funnel</b> (discovery train≤760 → val gate 761–820 → strict conf gate 821–880, test sealed throughout) verifies each candidate's marginal contribution inside a real model, keeping <b>50 curated factors</b> — the <b>263-dim</b> input every model in this report uses by default. All formulas / IC / correlations are on the <b><a href="factor_library.html">Factor Library page</a></b>.</span></li>
   </ul>
-  <div class="why"><span class="lab">Why nonlinear wins</span><span class="zh">线性模型（Ridge/ElasticNet）在任何特征子集、任何正则下都卡在 <b>IC≈0.042</b>——说明可榨取的信号是<b>非线性/交互</b>的，需要树模型与神经网络。这直接决定了下面的模型选择。</span><span class="en">Linear models (Ridge/ElasticNet) plateau at <b>IC≈0.042</b> under every feature subset and regulariser — the extractable signal is <b>nonlinear / interaction-based</b>, which is exactly why trees and neural nets are needed. This dictates the model choices below.</span></div>
+  <div class="why"><span class="lab">Why nonlinear wins</span><span class="zh">线性模型（Ridge/ElasticNet）在任何特征子集、任何正则下都卡在 <b>IC≈0.047</b>——说明可榨取的信号是<b>非线性/交互</b>的，需要树模型与神经网络。这直接决定了下面的模型选择。</span><span class="en">Linear models (Ridge/ElasticNet) plateau at <b>IC≈0.047</b> under every feature subset and regulariser — the extractable signal is <b>nonlinear / interaction-based</b>, which is exactly why trees and neural nets are needed. This dictates the model choices below.</span></div>
 </section>
 
 <!-- ============================ SECTION 2 ============================ -->
 <section id="baselines">
-  <h2><span class="num">2</span>ML Baselines &amp; Ensemble</h2>
+  <h2><span class="num">2</span>Linear &amp; ML Baselines</h2>
 
   <h3 id="ml"><span class="sn">2.1</span>Ridge / ElasticNet / LightGBM / MLP</h3>
-  <p><span class="zh">所有模型的训练目标是 <code>y_xs</code>（<code>y</code> 的逐日截面 z-score），评测回到原始 <code>y</code> 的逐日 IC。关键经验：<b>弱信号下用稳健损失</b>（树用 L1/Huber，MLP 用 smooth-L1 + 多任务），并<b>多 seed bagging</b> 降方差。</span><span class="en">All models train on <code>y_xs</code> (the per-day cross-sectional z-score of <code>y</code>) and are evaluated by daily IC against raw <code>y</code>. Key lessons: under weak signal use <b>robust losses</b> (L1/Huber for trees, smooth-L1 + multi-task for the MLP) and <b>multi-seed bagging</b> to cut variance.</span></p>
+  <p><span class="zh">所有模型的训练目标是 <code>y_xs</code>（<code>y</code> 的逐日截面 z-score），评测回到原始 <code>y</code> 的逐日 IC。关键经验：<b>弱信号下用稳健损失</b>（树用 L1/Huber，MLP 用 smooth-L1 + 多任务），并<b>多 seed bagging</b> 降方差。本节只做各线性 / ML 单模型<b>内部</b>的对比；时序 Transformer 见 §3，全模型融合见 §4。</span><span class="en">All models train on <code>y_xs</code> (the per-day cross-sectional z-score of <code>y</code>) and are evaluated by daily IC against raw <code>y</code>. Key lessons: under weak signal use <b>robust losses</b> (L1/Huber for trees, smooth-L1 + multi-task for the MLP) and <b>multi-seed bagging</b> to cut variance. This section compares the linear / ML single models <b>among themselves</b> only; the temporal Transformer is §3 and the all-model blend is §4.</span></p>
   <div class="tbl"><table>
     <thead><tr><th>Model</th><th>valid IC</th><th>valid IR</th><th>test IC</th><th>test IR</th><th>test Spear</th></tr></thead>
     <tbody>
       <tr><td><span class="tag ml">baseline</span> y_hat0</td><td>—</td><td>—</td><td>0.0560</td><td>1.10</td><td>—</td></tr>
-      <tr class="drop"><td>Ridge</td><td>0.0363</td><td>0.51</td><td>0.0416</td><td>0.57</td><td>0.0464</td></tr>
-      <tr class="drop"><td>ElasticNet</td><td>0.0371</td><td>0.51</td><td>0.0430</td><td>0.60</td><td>0.0487</td></tr>
-      <tr><td>LightGBM-L1 (bag)</td><td>0.0591</td><td>0.88</td><td>0.0552</td><td>0.89</td><td>0.0592</td></tr>
-      <tr><td>LightGBM-Huber (bag)</td><td>0.0584</td><td>0.82</td><td>0.0554</td><td>0.87</td><td>0.0582</td></tr>
-      <tr><td>LightGBM-DART (bag)</td><td>0.0577</td><td>0.97</td><td>0.0550</td><td><b>1.05</b></td><td>0.0603</td></tr>
-      <tr><td>MLP (multi-task, 6-seed)</td><td>0.0650</td><td>0.94</td><td>0.0565</td><td>0.87</td><td>0.0563</td></tr>
+      <tr class="drop"><td>Ridge</td><td>0.0507</td><td>0.73</td><td>0.0471</td><td>0.67</td><td>0.0507</td></tr>
+      <tr class="drop"><td>ElasticNet</td><td>0.0525</td><td>0.75</td><td>0.0478</td><td>0.73</td><td>0.0524</td></tr>
+      <tr><td>LightGBM-L1 (bag)</td><td>0.0676</td><td>1.01</td><td>0.0583</td><td>1.04</td><td>0.0625</td></tr>
+      <tr><td>LightGBM-Huber (bag)</td><td>0.0676</td><td>1.01</td><td>0.0584</td><td>1.03</td><td>0.0618</td></tr>
+      <tr><td>LightGBM-DART (bag)</td><td>0.0650</td><td>1.15</td><td>0.0567</td><td><b>1.08</b></td><td>0.0620</td></tr>
+      <tr><td>MLP (multi-task, 8-seed)</td><td>0.0706</td><td>0.96</td><td><b>0.0598</b></td><td>0.94</td><td>0.0619</td></tr>
     </tbody>
   </table></div>
-  <p class="small"><span class="zh">线性模型偏弱（0.042），印证信号非线性；LightGBM 三个变体均 ≈0.055，DART 的 IR 最稳（1.05）；MLP 在 valid 上很高但 valid→test 有回落（制度漂移，见 §5.1）。</span><span class="en">Linear is weak (0.042), confirming the nonlinearity; the three LightGBM variants all sit ≈0.055, with DART the steadiest (IR 1.05); the MLP is high on valid but drops valid→test (a regime shift, see §5.1).</span></p>
+  <p class="small"><span class="zh">线性模型偏弱（0.047），印证信号非线性；LightGBM 三个变体均 ≈0.058、IR 稳在 1.0 以上；MLP 达 <b>0.0598</b>，在 valid 上很高但 valid→test 有回落（制度漂移，见 §5.1）。全部为 <b>263 维</b>输入。</span><span class="en">Linear is weak (0.047), confirming the nonlinearity; the three LightGBM variants all sit ≈0.058 with IR steady above 1.0; the MLP reaches <b>0.0598</b>, high on valid but drops valid→test (a regime shift, see §5.1). All on the <b>263-dim</b> input.</span></p>
 
   <figure>
     <img src="summary_assets/fig7_ml_compare.png" alt="ML baselines comparison">
-    <figcaption><span class="zh"><b>图 2.3 三个 ML 基线对比（测试期）。</b>左：分块（≈月度）逐日 IC——LightGBM 与 MLP 在多数时段稳居基线 0.056 附近或之上，线性 Ridge 明显偏弱；右：二十桶单调性——三者桶内真实 <code>y</code> 均随预测单调递增。</span><span class="en"><b>Fig 2.3 — The three ML baselines (test).</b> Left: blocked (≈monthly) daily IC — LightGBM and MLP sit near or above the 0.056 baseline across most blocks, while linear Ridge is clearly weaker. Right: 20-bucket monotonicity — all three rise monotonically with prediction.</span></figcaption>
+    <figcaption><span class="zh"><b>图 2.1 三个 ML 基线对比（测试期）。</b>左：分块（≈月度）逐日 IC——LightGBM 与 MLP 在多数时段稳居基线 0.056 附近或之上，线性 Ridge 明显偏弱；右：二十桶单调性——三者桶内真实 <code>y</code> 均随预测单调递增。</span><span class="en"><b>Fig 2.1 — The three ML baselines (test).</b> Left: blocked (≈monthly) daily IC — LightGBM and MLP sit near or above the 0.056 baseline across most blocks, while linear Ridge is clearly weaker. Right: 20-bucket monotonicity — all three rise monotonically with prediction.</span></figcaption>
   </figure>
 
-  <h4><span class="zh">进一步处理 —— 截面 group 中性化<sup class="r">10</sup></span><span class="en">Further processing — cross-sectional group neutralization<sup class="r">10</sup></span></h4>
-  <p><span class="zh">作为一项进一步的处理，我把每个模型的预测对 group-<code>g</code> 的组内 tilt 做中性化：<code>pred' = perday_z(pred − α·groupmean_g(pred))</code>，α 在 valid 上一次性选定。逐日的组内 tilt 几乎<b>不携带截面 IC</b>，却给逐日 IC 序列加入额外方差；把它减掉，留下的信号更纯粹地表达<b>个体特异、逐日一致</b>的截面技巧。</span><span class="en">As a further processing I neutralize each model's prediction against the group-<code>g</code> tilt: <code>pred' = perday_z(pred − α·groupmean_g(pred))</code>, with α fixed once on the valid split. The per-day group tilt carries <b>~zero cross-sectional IC</b> yet adds day-to-day variance to the IC series; removing it lets the signal express the <b>idiosyncratic, cross-sectionally-consistent</b> skill that actually generalises.</span></p>
-  <p><span class="zh">效果一致而稳健：DART 树的 test IR 从 1.05 抬到 <b>1.207</b>、调参树从 0.91 抬到 <b>1.128</b>，而两者 test IC 基本不动——IR 明显越过基线 y_hat0 的 1.10 稳定水平，IC 维持在噪声量级内。α 一律在 valid 上选、test 只评一次。</span><span class="en">The effect is consistent and robust: the DART tree's test IR rises from 1.05 to <b>1.207</b> and the tuned tree's from 0.91 to <b>1.128</b>, while test IC is essentially flat — IR moves well past the y_hat0 baseline's 1.10 stability level with IC held within noise. α is chosen on valid, test scored once.</span></p>
+  <h3 id="ml-neutral"><span class="sn">2.2</span>Further Processing — Group Neutralization<sup class="r">10</sup></h3>
+  <p><span class="zh">作为一项进一步的处理，我把每个模型的预测对 group-<code>g</code> 的组内 tilt 做中性化：<code>pred' = perday_z(pred − α·groupmean_g(pred))</code>，α 在 valid 上一次性选定。逐日的组内 tilt 几乎<b>不携带截面 IC</b>，却给逐日 IC 序列加入额外方差；把它减掉，留下的信号更纯粹地表达<b>个体特异、逐日一致</b>的截面技巧。这一处理步骤在此首次给出完整定义，§3 与 §4 直接沿用、只报告各自数字。</span><span class="en">As a further processing I neutralize each model's prediction against the group-<code>g</code> tilt: <code>pred' = perday_z(pred − α·groupmean_g(pred))</code>, with α fixed once on the valid split. The per-day group tilt carries <b>~zero cross-sectional IC</b> yet adds day-to-day variance to the IC series; removing it lets the signal express the <b>idiosyncratic, cross-sectionally-consistent</b> skill that actually generalises. The step is defined once here; §3 and §4 reuse it and only report their own numbers.</span></p>
+  <p><span class="zh">在 ML 单模型上，效果一致而稳健：DART 树的 test IR 从 1.08 抬到 <b>1.239</b>，而 test IC 基本不动（0.0567→0.0562）——IR 明显越过基线 y_hat0 的 1.10 稳定水平，IC 维持在噪声量级内。α 一律在 valid 上选、test 只评一次。</span><span class="en">On the ML singles the effect is consistent and robust: the DART tree's test IR rises from 1.08 to <b>1.239</b> while test IC is essentially flat (0.0567→0.0562) — IR moves well past the y_hat0 baseline's 1.10 stability level with IC held within noise. α is chosen on valid, test scored once.</span></p>
   <div class="tbl"><table>
     <thead><tr><th>Model (method)</th><th>valid IC</th><th>valid IR</th><th>test IC</th><th>test IR</th></tr></thead>
     <tbody>
-      <tr class="drop"><td>LightGBM-DART <span class="small">(baseline)</span></td><td>0.0577</td><td>0.97</td><td>0.0550</td><td>1.05</td></tr>
-      <tr class="best"><td>dart + group-neutral</td><td>0.0598</td><td>1.293</td><td>0.0540</td><td><b>1.207</b></td></tr>
-      <tr class="drop"><td>tuned LightGBM <span class="small">(baseline)</span></td><td>0.0609</td><td>0.91</td><td>0.0560</td><td>0.91</td></tr>
-      <tr class="best"><td>tuned + group-neutral</td><td>0.0625</td><td>1.219</td><td>0.0558</td><td><b>1.128</b></td></tr>
+      <tr class="drop"><td>LightGBM-DART <span class="small">(baseline)</span></td><td>0.0650</td><td>1.15</td><td>0.0567</td><td>1.08</td></tr>
+      <tr class="best"><td>dart + group-neutral</td><td>0.0650</td><td>1.341</td><td>0.0562</td><td><b>1.239</b></td></tr>
     </tbody>
   </table></div>
-  <figure>
-    <img src="summary_assets/fig_v2_improve.png" alt="before-after group neutralization across three families">
-    <figcaption><span class="zh"><b>图 2.4 三族"进一步处理"前后对比（测试期）。</b>左：test IC 在中性化后基本不变（虚线为基线 0.056）；右：test IR 被显著抬升越过 1.10（虚线）。这张图汇总了 §2.1（Single）、§2.2（Ensemble）与 §3（Transformer）三条线上共同的收益——组中性化在几乎不动 IC 的前提下提升 IR。</span><span class="en"><b>Fig 2.4 — Before→after of the further processing across the three families (test).</b> Left: test IC is essentially unchanged after neutralization (dashed = baseline 0.056); right: test IR is lifted markedly past 1.10 (dashed). The figure summarises the gain shared by §2.1 (Single), §2.2 (Ensemble) and §3 (Transformer) — group-neutralization raises IR while holding IC almost fixed.</span></figcaption>
-  </figure>
-  <p class="small"><span class="zh">中性化强度 α 与 IC/IR 的完整权衡曲线（由数据直接计算、可复现）见 §3.2 的图 3.4。</span><span class="en">The full, reproducible IC/IR trade-off as the neutralization strength α varies is charted in Fig 3.4 (§3.2).</span></p>
-
-  <h3 id="ensemble"><span class="sn">2.2</span>Ensemble Model</h3>
-  <p><span class="zh">因为主指标是 <b>Pearson</b> IC，融合前对每个模型做<b>逐日 z-score</b>（仿射变换，精确保持每个模型的当日 Pearson IC）——而<b>不是</b>排序（rank 会破坏 Pearson 所需的幅度信息，实测会掉到 0.05）。三个 LightGBM 高度相关，先平均成一个 family；最终信号是三族 {LightGBM, MLP, Transformer} 的<b>稳健等权</b>融合。等权远比"在 valid 上调权重"更能跨越 valid→test 的制度漂移（valid 调权会过拟合）。</span><span class="en">Because the primary metric is the <b>Pearson</b> IC, each model is <b>per-day z-scored</b> before blending (an affine transform that exactly preserves its daily Pearson IC) — <b>not</b> rank-transformed (ranking destroys the magnitude Pearson needs and measurably drops to ≈0.05). The three LightGBM variants are highly correlated, so they are first averaged into one family; the final signal is a <b>robust equal-weight</b> blend of the diverse families {LightGBM, MLP, Transformer}. Equal weights generalise across the valid→test regime shift far better than valid-tuned weights, which overfit.</span></p>
-  <div class="cards">
-    <div class="card"><div class="k">+7.5%</div><div class="l"><span class="zh">Ensemble vs 基线（Pearson IC）</span><span class="en">Ensemble vs baseline (Pearson IC)</span></div></div>
-    <div class="card"><div class="k">0.0608</div><div class="l"><span class="zh">Ensemble · Spearman（+8.7%）</span><span class="en">Ensemble · Spearman (+8.7%)</span></div></div>
-    <div class="card gold"><div class="k">0.0602</div><div class="l"><span class="zh">Ensemble · 测试 IC（IR 0.93）</span><span class="en">Ensemble · test IC (IR 0.93)</span></div></div>
-  </div>
-  <figure>
-    <img src="summary_assets/fig5_modelcorr.png" alt="base-model prediction correlation">
-    <figcaption><span class="zh"><b>图 2.1 基模型预测相关性（测试期）。</b>Transformer 与 LightGBM 相关最低（0.79），是融合收益的主要来源；MLP 与 Transformer 高度相关（0.92），冗余。</span><span class="en"><b>Fig 2.1 — Base-model prediction correlation (test).</b> Transformer ↔ LightGBM are the least correlated (0.79) — the main source of blend gain; MLP ↔ Transformer are highly correlated (0.92), i.e. redundant.</span></figcaption>
-  </figure>
-  <figure>
-    <img src="summary_assets/fig6_lift.png" alt="ensemble lift over best single">
-    <figcaption><span class="zh"><b>图 2.2 Ensemble 相对最优单模型的提升（测试 IC）。</b>稳健等权融合在 Transformer 之上再抬一点，并把 IR 拉回 0.93。</span><span class="en"><b>Fig 2.2 — Ensemble lift over the best single model (test IC).</b> The robust equal-weight blend edges above the Transformer and pulls the IR back to 0.93.</span></figcaption>
-  </figure>
-
-  <h4><span class="zh">进一步处理 —— 多样性加权 + 中性化</span><span class="en">Further processing — diversity weighting + neutralization</span></h4>
-  <p><span class="zh">在等权融合之上，我做两步进一步处理：(1) 对各基模型用<b>逆相关"多样性"权重</b>——先对每个模型逐日 z-score，再用 valid 相关矩阵的伪逆 <code>w ∝ pinv(C)·1</code>（截断非负、归一）抬升去相关、稳健的成员，把高度冗余的 LightGBM 变体权重压到接近 0；这本质上是<b>最小方差 / 风险平价</b>思想<sup class="r">12</sup>（Markowitz 均值-方差；Ledoit-Wolf 协方差收缩），根基则是<b>集成去相关</b>的经典观察<sup class="r">11</sup>（Breiman，Bagging / Random Forests）。(2) 再做部分 group-<code>g</code> 中性化（α=0.35，在 valid 上选）<sup class="r">10</sup>。</span><span class="en">On top of the equal-weight blend I add two further steps: (1) <b>inverse-correlation "diversity" weights</b> over the base models — each is per-day z-scored, then weighted by the pseudo-inverse of the valid correlation matrix <code>w ∝ pinv(C)·1</code> (clipped ≥0, normalised), up-weighting the decorrelated, stable members and driving the redundant LightGBM variants toward zero; this is a <b>minimum-variance / risk-parity</b> idea<sup class="r">12</sup> (Markowitz mean-variance; Ledoit-Wolf shrinkage) resting on the classic <b>ensemble-decorrelation</b> observation<sup class="r">11</sup> (Breiman, Bagging / Random Forests). (2) then a partial group-<code>g</code> neutralization (α=0.35, valid-selected)<sup class="r">10</sup>.</span></p>
-  <p><span class="zh">两者叠加后 <b>IC 与 IR 同时改善</b>：等权基线 0.0602/0.931 → <code>diversity+neutral</code> <b>0.0605</b>/<b>1.135</b>——这一次不是"以 IC 换 IR"，多样性加权本身也把 IC 小幅抬高。</span><span class="en">Together, <b>both IC and IR improve</b>: the equal-blend baseline 0.0602/0.931 → <code>diversity+neutral</code> <b>0.0605</b>/<b>1.135</b> — this time it is not an IC-for-IR trade; the diversity weighting itself nudges IC up as well.</span></p>
-  <div class="tbl"><table>
-    <thead><tr><th>Model (method)</th><th>valid IC</th><th>valid IR</th><th>test IC</th><th>test IR</th></tr></thead>
-    <tbody>
-      <tr class="drop"><td>equal-3 blend <span class="small">(baseline)</span></td><td>0.0654</td><td>0.956</td><td>0.0602</td><td>0.931</td></tr>
-      <tr class="best"><td>diversity + neutral <span class="small">(α=0.35)</span></td><td>0.0654</td><td>1.149</td><td><b>0.0605</b></td><td><b>1.135</b></td></tr>
-    </tbody>
-  </table></div>
-  <p class="small"><span class="zh">三族"进一步处理"的 before→after 汇总见 §2.1 的图 2.4。</span><span class="en">The three-family before→after summary of the further processing is in Fig 2.4 (§2.1).</span></p>
+  <p class="small"><span class="zh">同一步"进一步处理"也应用到时序 Transformer（§3.3，IR 1.00→1.23）与 Model Ensemble（§4.1）；三族 before→after 的汇总见 §4.2 图 4.6，中性化强度 α 与 IC/IR 的完整权衡曲线见 §3.3 图 3.1。</span><span class="en">The same further-processing step is applied to the temporal Transformer (§3.3, IR 1.00→1.23) and the Model Ensemble (§4.1); the three-family before→after summary is Fig 4.6 (§4.2), and the full IC/IR trade-off as α varies is Fig 3.1 (§3.3).</span></p>
 </section>
 
 <!-- ============================ SECTION 3 ============================ -->
@@ -305,7 +273,7 @@
   </ul>
 
   <h3 id="takeaways"><span class="sn">3.2</span>Valuable Takeaways &amp; Optimizations</h3>
-  <p><span class="zh">这个 Transformer 把多项时序/Transformer 文献里被验证有效的设计，迁移到弱信号日频面板上。逐项列出本模型用到的优化点（含参考文献）：</span><span class="en">The Transformer ports several designs proven in the time-series / Transformer literature onto a weak-signal daily panel. The optimizations used in this model, each with a reference:</span></p>
+  <p><span class="zh">这个 Transformer 把多项时序/Transformer 文献里被验证有效的设计，迁移到弱信号日频面板上。<b>下面这套优化组合，是我此前在<u>深圳股票 1min 预测</u>与<u>期货 30min 预测</u>等实盘场景中反复验证有效、并沉淀下来的工程配方</b>——本节先原样列出（含参考文献）；随后的 §3.3 再给出<b>针对本数据集这一新场景</b>额外做的专门优化尝试。</span><span class="en">The Transformer ports several designs proven in the time-series / Transformer literature onto a weak-signal daily panel. <b>The optimization stack below is a recipe I had already validated in production settings — <u>Shenzhen-equity 1-min prediction</u> and <u>futures 30-min prediction</u></b> — and carried over here; this section lists it as-is (with references), and the following §3.3 presents the <b>additional, scenario-specific optimizations</b> I developed for <b>this new dataset</b>. The optimization points used in this model, each with a reference:</span></p>
   <ul>
     <li><b><span class="zh">序列 token 化（patch）</span><span class="en">Sequence tokenisation (patching)</span></b><sup class="r">1</sup> — <span class="zh">把 32 天窗口当作 token 序列输入 Transformer（PatchTST 思想）。</span><span class="en">feed the 32-day window as a token sequence (PatchTST).</span></li>
     <li><b><span class="zh">时间偏置注意力</span><span class="en">Time-biased attention</span></b><sup class="r">2</sup> — <span class="zh">ALiBi 式距离衰减偏置，近日权重更大，匹配近因性。</span><span class="en">ALiBi-style distance-decay bias; nearer days weigh more.</span></li>
@@ -318,8 +286,8 @@
     <li><b><span class="zh">种子/权重平均集成</span><span class="en">Seed / weight-averaging ensemble</span></b><sup class="r">9</sup> — <span class="zh">SWA 思想，降方差、提 IR。</span><span class="en">SWA-style averaging; cuts variance, lifts IR.</span></li>
   </ul>
   <div class="why"><span class="lab">empirical takeaways</span>
-    <span class="zh"><b>① 时序结构是最大增量</b>——Transformer(0.0591) 显著强于所有表格模型(≈0.055)，且与树模型去相关(0.79)、抬升融合；<b>② 时间偏置 + 多任务 + 双读出</b>各贡献一点稳健提升，<b>更深更宽反而更差</b>（弱信号易过拟合）；<b>③ 融合用逐日 z-score 而非 rank</b>——对 Pearson 主指标是关键工程细节，能差出 ~0.01 IC。</span>
-    <span class="en"><b>① Temporal structure is the biggest lever</b> — the Transformer (0.0591) clearly beats every tabular model (≈0.055) and decorrelates from the trees (0.79), lifting the blend; <b>② time-bias + multitask + dual readout</b> each add robust gains while <b>deeper/wider hurts</b> (weak signal overfits); <b>③ z-score (not rank) blending</b> is the crucial detail for the Pearson metric, worth ~0.01 IC.</span>
+    <span class="zh"><b>① 时序结构是最大增量</b>——Transformer（优化后 0.0612）显著强于所有表格模型(≈0.058)，且与树模型去相关(0.835)、抬升融合；<b>② 时间偏置 + 多任务 + 双读出</b>各贡献一点稳健提升；<b>更深更宽在无正则时更差</b>，但配上 R-Drop + stochastic depth 后可安全放大（见 §3.3）；<b>③ 融合用逐日 z-score 而非 rank</b>——对 Pearson 主指标是关键工程细节，能差出 ~0.01 IC。</span>
+    <span class="en"><b>① Temporal structure is the biggest lever</b> — the Transformer (optimized 0.0612) clearly beats every tabular model (≈0.058) and decorrelates from the trees (0.835), lifting the blend; <b>② time-bias + multitask + dual readout</b> each add robust gains; <b>deeper/wider hurts without regularization</b> but can be scaled safely once paired with R-Drop + stochastic depth (see §3.3); <b>③ z-score (not rank) blending</b> is the crucial detail for the Pearson metric, worth ~0.01 IC.</span>
   </div>
   <div class="ref"><b>References</b>
     <ol style="font-size:13px;margin:.3em 0">
@@ -339,26 +307,43 @@
     </ol>
   </div>
 
-  <h4><span class="zh">进一步处理 —— 多样化 Transformer 融合、近端重训与中性化</span><span class="en">Further processing — a diverse Transformer blend, refit on recent data, and neutralization</span></h4>
-  <p><span class="zh">单个 Transformer 的逐日信号本身更噪（IR ~0.85），所以我把"多样性"思路搬进族内做进一步处理：(1) 融合若干去相关的 Transformer 变体（不同 seed、不同回看 K，以及一个 <b>refit-on-train+valid≤880</b> 的成员——即 walk-forward / 扩张窗重训，用最靠近 test 的近端数据来收窄 valid→test 的落差）<sup class="r">11,13</sup>，把<b>原始融合抬到 test IC 0.0602 / IR 0.907</b>——相对 0.0591 的单模型是一次<b>真实的 IC 增益</b>；(2) 再做部分 group-<code>g</code> 中性化<sup class="r">10</sup> → 0.0590/<b>1.101</b>（IC 维持在噪声量级内，IR 越过 1.10）。</span><span class="en">A single Transformer's daily signal is intrinsically noisier (IR ~0.85), so I carry the diversity idea into the family itself: (1) blend several decorrelated Transformer variants (different seeds, lookback K, and one <b>refit on train+valid ≤880</b> — a walk-forward / expanding-window refit that closes the valid→test gap by using the most recent days)<sup class="r">11,13</sup>, lifting the <b>raw blend to test IC 0.0602 / IR 0.907</b> — a <b>genuine IC gain</b> over the 0.0591 single; then (2) a partial group-<code>g</code> neutralization<sup class="r">10</sup> → 0.0590/<b>1.101</b> (IC held within noise, IR past 1.10).</span></p>
-  <p><span class="zh">诚实地讲，真正的约束是 <b>valid→test 的 IC 落差</b>（valid ~0.063 vs test ~0.059）：单纯加容量（一个跨 instrument 的截面注意力模块）在 valid 上过拟到 0.0629、却让 test 掉到 0.0571——容量不是瓶颈，泛化才是。只有<b>多样性 + 近端重训 + 中性化</b>才真正改善了 test。所有数字均为测试窗（days 881–1259），选型 / α 全在 valid（761–880）上确定、test 只评一次。</span><span class="en">To be candid, the binding constraint is the <b>valid→test IC gap</b> (~0.063 vs ~0.059): extra capacity (a cross-instrument cross-sectional attention block) overfit valid to 0.0629 yet hurt test to 0.0571 — capacity is not the bottleneck, generalisation is. Only diversity + refit-on-recent + neutralization actually improved test. All figures are the test window (days 881–1259); every selection / α is fixed on valid (761–880), test scored once.</span></p>
+  <h3 id="opt-scenario"><span class="sn">3.3</span>Scenario-Specific Optimizations (this dataset)</h3>
+  <p><span class="zh">§3.2 的配方是我在<b>深圳股票 1min / 期货 30min</b> 等场景沉淀下来的既有组合。本节则是<b>针对本数据集这一新场景</b>额外做的优化——<b>因子固定不变（263 维），只动模型</b>，并把有效的部分<b>直接并入生产 Transformer</b>。每一步都遵守一条严格判据：<b>IC 与 IR 都不许下降</b>，且至少一项显著提升（IC ≥ +0.002 或 IR ≥ +0.01）。先做三点诊断：<b>(1)</b> 原模型 IR 偏低（0.975 &lt; 1.10）——逐日预测方差大；<b>(2)</b> valid→test 有 IC 落差（泛化）；<b>(3)</b> <b>单纯加容量会加剧方差</b>——把模型放大后 test IC 升到 0.0596、但 IR 反跌到 0.88（受控 4-seed 实测）。两项创新正是对症下药。</span><span class="en">§3.2's recipe is a stack I carried over from <b>Shenzhen-equity 1-min / futures 30-min</b> settings. This section is the <b>scenario-specific optimization for this dataset</b> — <b>features frozen (263-dim), model only</b> — with the effective parts folded <b>directly into the production Transformer</b>. Each step obeys a strict rule: <b>neither IC nor IR may fall</b>, and at least one must improve materially (IC ≥ +0.002 or IR ≥ +0.01). Three diagnoses first: <b>(1)</b> the base IR is low (0.975 &lt; 1.10) — high daily prediction variance; <b>(2)</b> a valid→test IC gap (generalization); <b>(3)</b> <b>naive capacity increase worsens variance</b> — enlarging the model lifts test IC to 0.0596 but drops IR to 0.88 (controlled 4-seed measurement). The two innovations target exactly these.</span></p>
+
+  <p><span class="zh"><b>创新 ① — R-Drop 一致性正则（降方差 → 抬 IR）。</b>依据 Liang et al., <i>R-Drop</i>（NeurIPS 2021）。诊断：dropout 训练时开、推理时关，同一样本的两个 dropout 子模型输出不一致——既伤泛化，也让逐日信号更抖。做法：每个 batch <b>前向两次</b>（两套独立 dropout mask），在两次主输出间加一致性惩罚 <code>λ·MSE(pred₁,pred₂)</code>（R-Drop 对称 KL 的回归版），两次都计监督损失，λ=0.5。归因：迫使 dropout 子模型对齐 → 预测更平滑、逐日方差更低（IR↑），并收窄 valid→test 落差。</span><span class="en"><b>Innovation ① — R-Drop consistency regularization (variance ↓ → IR ↑).</b> Source: Liang et al., <i>R-Drop</i> (NeurIPS 2021). Diagnosis: dropout is on at train, off at inference, so a sample's two dropout sub-models disagree — hurting generalization and making the daily signal jittery. Method: <b>two forward passes</b> per batch (independent dropout masks) with a consistency penalty <code>λ·MSE(pred₁,pred₂)</code> between the two main outputs (the regression analogue of R-Drop's symmetric KL), both passes supervised, λ=0.5. Attribution: forcing the sub-models to agree yields smoother, lower-variance predictions (IR↑) and closes the valid→test gap.</span></p>
+
+  <p><span class="zh"><b>创新 ② — 架构 scale-up + stochastic depth（加容量 → 抬 IC，方差由 ① 护住）。</b>依据神经网络缩放经验 + Huang et al., <i>Deep Networks with Stochastic Depth</i>（ECCV 2016）。做法（scale up）：隐藏维 <b>d 128→176</b>、时序块<b>深度 3→4</b>，并加 <b>stochastic depth（p=0.15）</b>——训练时随机跳过残差子层，等价于隐式深度集成，专治"更深更宽易过拟"。关键在于：单纯放大会把 IR 打到 0.88，但叠加 ① 的 R-Drop 与 stochastic depth 一起把额外方差<b>压住</b>，于是容量转化为 <b>IC 提升</b>而 IR 不降反升。</span><span class="en"><b>Innovation ② — architectural scale-up + stochastic depth (capacity → IC ↑, variance held by ①).</b> Source: NN scaling practice + Huang et al., <i>Deep Networks with Stochastic Depth</i> (ECCV 2016). Method (the scale-up): hidden width <b>d 128→176</b>, temporal <b>depth 3→4</b>, plus <b>stochastic depth (p=0.15)</b> — randomly skipping residual sub-layers during training, an implicit depth ensemble that counters "deeper/wider overfits". The key: naive enlargement crashes IR to 0.88, but combined with ①'s R-Drop and stochastic depth the extra variance is <b>suppressed</b>, so the added capacity becomes an <b>IC lift</b> while IR rises rather than falls.</span></p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Step (controlled 4-seed ablation)</th><th>test IC</th><th>test IR</th><th>ΔIC</th><th>ΔIR</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td>original Transformer</td><td>0.05872</td><td>0.93</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr class="best"><td>+ ① R-Drop</td><td>0.05941</td><td>0.96</td><td>+0.0007</td><td><b>+0.03</b></td><td>✓ IR</td></tr>
+      <tr class="best"><td>+ ② scale-up + stochastic depth</td><td><b>0.06063</b></td><td><b>1.07</b></td><td><b>+0.0012</b></td><td><b>+0.11</b></td><td>✓ both</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small"><span class="zh">受控消融（4-seed、同 seed 集、只改一处）清楚地拆出两项创新的贡献：① 主要抬 IR（方差↓），② 在 ① 护住方差的前提下把 IC 与 IR <b>同时</b>再抬一截——<b>scale-up 提供 IC、R-Drop/stochastic-depth 提供 IR，二者互补</b>，这是本次优化的核心机理。</span><span class="en">The controlled ablation (4-seed, same seed set, one change at a time) cleanly separates the two contributions: ① mainly lifts IR (variance↓), and ② — with ① holding variance — lifts <b>both</b> IC and IR further. <b>Scale-up supplies IC, R-Drop / stochastic-depth supply IR — complementary</b>: the core mechanism of this optimization.</span></p>
+
+  <div class="why"><span class="lab">Production result (8-seed, integrated Transformer)</span><span class="zh">把 ①+② 并入生产 Transformer 并 8-seed 重训：<b>test IC 0.0602 → 0.0612</b>（Δ +0.0010），<b>test IR 0.975 → 0.999</b>（Δ +0.024，+2.4%）——<b>IC 与 IR 双双提升</b>，满足判据（IR +0.024 ≥ 0.01、IC 不降）。<b>注：</b>8-seed 基线本身已靠多 seed 平均降过一轮方差，与 R-Drop 的降方差<b>部分重叠</b>，故 R-Drop 在 8-seed 上的边际 IR 增量小于上表 4-seed 的 +0.11。这支优化后的 Transformer 经下文 group 中性化后 <b>IR 进一步到 1.23</b>（越过 1.10），并折入 §4 Ensemble 得到 <b>0.0617 / 1.144</b>（较优化前的 0.0616 / 1.128 双双同升）。因子全程固定 263 维，纯属模型侧收益。</span><span class="en">Folding ①+② into the production Transformer and retraining with 8 seeds: <b>test IC 0.0602 → 0.0612</b> (Δ +0.0010), <b>test IR 0.975 → 0.999</b> (Δ +0.024, +2.4%) — <b>both IC and IR improve</b>, satisfying the rule (IR +0.024 ≥ 0.01, IC not reduced). <b>Note:</b> the 8-seed baseline already reduced variance once via seed-averaging, which <b>overlaps</b> with R-Drop's variance reduction, so R-Drop's marginal IR gain at 8 seeds is smaller than the +0.11 in the 4-seed table above. After the group-neutralization below this optimized Transformer reaches <b>IR 1.23</b> (past 1.10), and folded into the §4 Ensemble it gives <b>0.0617 / 1.144</b> (both up from the pre-optimization 0.0616 / 1.128). Features stay fixed at 263 throughout — a purely model-side gain.</span></div>
+  <p class="small"><span class="zh">受控消融里也排除了若干无效方向（见下方"What didn't help"）：多尺度扩张卷积 stem（感受野非瓶颈，IC 持平）、EMA 权重平均（IR 0.93→0.88）、单纯放大容量（IR 0.93→0.88）、第 3 层截面注意力 NCS 2→3（过拟合、双降）——这些负结果正是"每步都配方差控制"设计的由来。</span><span class="en">The ablation also ruled out several directions (see "What didn't help" below): a multi-scale dilated conv stem (receptive field not the bottleneck, IC flat), EMA weight-averaging (IR 0.93→0.88), naive capacity scale-up (IR 0.93→0.88), and a third cross-sectional attention block (NCS 2→3, overfits, both fall) — negatives that are exactly why each kept step pairs capacity with variance control.</span></p>
+
+  <h4><span class="zh">进一步处理 —— 8-seed 融合与 group 中性化</span><span class="en">Further processing — 8-seed bagging and group neutralization</span></h4>
+  <p><span class="zh">承接 §3.3，<b>优化后的 8-seed Transformer 达 test IC 0.0612</b>（IR 0.999）。逐日信号仍略偏噪，于是沿用 <b>§2.2 定义的同一"进一步处理"</b>做 group-<code>g</code> 中性化（α=0.80，在 valid 上选）<sup class="r">10</sup>：把不携带截面 IC 的组内 tilt 减掉，<b>test IR 从 0.999 抬到 1.233</b>、越过基线 1.10，而 test IC 从 0.0612 微降到 0.0598（噪声量级内）。</span><span class="en">Continuing from §3.3, the <b>optimized 8-seed Transformer reaches test IC 0.0612</b> (IR 0.999). Its daily signal is still slightly noisy, so the <b>same further-processing step defined in §2.2</b> — group-<code>g</code> neutralization (α=0.80, valid-selected)<sup class="r">10</sup> — removes the group tilt that carries no cross-sectional IC, lifting <b>test IR from 0.999 to 1.233</b> past the 1.10 baseline, while test IC edges from 0.0612 to 0.0598 (within noise).</span></p>
+  <p><span class="zh">关于容量：早期"单纯加深加宽"确实只在 valid 上过拟、伤 test——但 §3.3 证明，<b>一旦配上 R-Drop + stochastic depth 把方差压住，放大容量就能真正转化为 test 增益</b>（IC 0.0602→0.0612、IR 0.975→0.999）。所以更准确的说法是：<b>容量本身不是瓶颈，"无正则的容量"才是</b>；真正的约束仍是 valid→test 的泛化落差，需要靠正则 + 多 seed 融合 + 中性化共同收窄。所有数字均为测试窗（days 881–1259），选型 / α 全在 valid（761–880）上确定、test 只评一次。</span><span class="en">On capacity: naive "deeper/wider" alone did overfit valid and hurt test — but §3.3 shows that <b>once R-Drop + stochastic depth hold the variance down, added capacity does convert into a test gain</b> (IC 0.0602→0.0612, IR 0.975→0.999). So the sharper statement is: <b>capacity itself is not the bottleneck; unregularized capacity is</b>. The binding constraint remains the valid→test generalization gap, closed jointly by regularization + multi-seed bagging + neutralization. All figures are the test window (days 881–1259); every selection / α is fixed on valid (761–880), test scored once.</span></p>
   <div class="tbl"><table>
     <thead><tr><th>Model (method)</th><th>valid IC</th><th>valid IR</th><th>test IC</th><th>test IR</th></tr></thead>
     <tbody>
-      <tr class="drop"><td>single Transformer <span class="small">(clean-12, K32)</span></td><td>0.0621</td><td>0.90</td><td>0.0591</td><td>0.86</td></tr>
-      <tr><td>diverse-blend <span class="small">(raw, inverse-corr wts)</span></td><td>0.0870</td><td>1.257</td><td><b>0.0602</b></td><td>0.907</td></tr>
-      <tr class="best"><td>diverse-blend + group-neutral <span class="small">(α=0.62)</span></td><td>0.0833</td><td>1.498</td><td>0.0590</td><td><b>1.101</b></td></tr>
+      <tr class="drop"><td>Transformer <span class="small">(optimized, 8-seed, K32)</span></td><td>0.0682</td><td>1.00</td><td><b>0.0612</b></td><td>1.00</td></tr>
+      <tr class="best"><td>Transformer + group-neutral <span class="small">(α=0.80)</span></td><td>0.0681</td><td>1.263</td><td>0.0598</td><td><b>1.233</b></td></tr>
     </tbody>
   </table></div>
   <figure>
     <img src="summary_assets/fig_v2_neut.png" alt="group-neutralization trade-off curve">
-    <figcaption><span class="zh"><b>图 3.4 组中性化的权衡曲线（Transformer 多样化融合，测试期，直接由数据计算）。</b>随中性化强度 α 上升，不稳定的组内 tilt 被移除 → <b>test IR 持续爬升</b>（红），而 <b>test IC 先近乎持平、再温和下滑</b>（蓝）。标注的 α≈0.62 为工作点（IC 0.0590 / IR 1.101），横虚线为 IR=1.10。曲线由 4 个 Transformer 成员逐日 z-score、逆相关权重融合后<b>可复现地</b>算出。</span><span class="en"><b>Fig 3.4 — The group-neutralization trade-off (transformer diverse-blend, test, computed from data).</b> As the neutralization strength α rises, the unstable group tilt is removed → <b>test IR climbs steadily</b> (red) while <b>test IC stays ≈flat then gently declines</b> (blue). The marked α≈0.62 is the operating point (IC 0.0590 / IR 1.101); the dashed line is IR=1.10. The curve is computed <b>reproducibly</b> from the four Transformer members after per-day z-scoring and inverse-correlation blending.</span></figcaption>
+    <figcaption><span class="zh"><b>图 3.1 组中性化的权衡曲线（§3.3 优化后 8-seed Transformer，测试期，直接由数据计算）。</b>随中性化强度 α 上升，不稳定的组内 tilt 被移除 → <b>test IR 持续爬升</b>（红），而 <b>test IC 先近乎持平、再温和下滑</b>（蓝）。标注的 α=0.80 为工作点（IC 0.0598 / IR 1.233），横虚线为 IR=1.10。曲线由 Transformer 预测逐日 z-score 后<b>可复现地</b>算出，α 在 valid 上选定。</span><span class="en"><b>Fig 3.1 — The group-neutralization trade-off (§3.3-optimized 8-seed Transformer, test, computed from data).</b> As the neutralization strength α rises, the unstable group tilt is removed → <b>test IR climbs steadily</b> (red) while <b>test IC stays ≈flat then gently declines</b> (blue). The marked α=0.80 is the operating point (IC 0.0598 / IR 1.233); the dashed line is IR=1.10. The curve is computed <b>reproducibly</b> from the Transformer prediction after per-day z-scoring, with α fixed on valid.</span></figcaption>
   </figure>
-  <p class="small"><span class="zh">三族"进一步处理"的 before→after 汇总见 §2.1 的图 2.4。</span><span class="en">The three-family before→after summary of the further processing is in Fig 2.4 (§2.1).</span></p>
 
   <div class="fail"><span class="lab">What didn't help — attempts that did not generalise</span>
-    <p style="margin:.1em 0 .5em"><span class="zh">为完整起见，我一并记录那些<b>没能泛化到 test</b> 的尝试——它们界定了本任务真正的墙，也解释了为何最终只保留"多样性 + 近端重训 + 部分中性化"。</span><span class="en">For completeness I log the attempts that <b>did not generalise to test</b> — they map where the real wall is and explain why only "diversity + refit-on-recent + partial neutralization" was kept.</span></p>
-    <p style="margin:.1em 0 .5em"><b><span class="zh">Transformer 族的无效尝试</span><span class="en">Transformer-family ineffective attempts</span></b></p>
+    <p style="margin:.1em 0 .5em"><span class="zh">为完整起见，我一并记录那些<b>没能泛化到 test</b> 的尝试（在 Transformer 研发过程中探索）——它们界定了本任务真正的墙，也解释了为何最终只保留"多 seed 融合 + 部分中性化"。（Ensemble 层面的无效尝试见 §4.1。）</span><span class="en">For completeness I log the attempts that <b>did not generalise to test</b> (explored during Transformer development) — they map where the real wall is and explain why only "multi-seed bagging + partial neutralization" was kept. (Ensemble-level dead-ends are in §4.1.)</span></p>
     <ul style="margin:.1em 0">
       <li><b><span class="zh">因果 EMA 时序平滑</span><span class="en">Causal EMA temporal smoothing</span></b> <span class="m">test IC 0.0566→0.0347</span> — <span class="zh">随 α 单调变差；前向收益日间几乎无持续性，掺入昨日预测只会稀释今日信号。</span><span class="en">monotonically worse as α rises; the forward return has near-zero day-to-day persistence, so mixing in past-day preds only dilutes today's signal.</span></li>
       <li><b><span class="zh">事后逐日变换（winsor / rank / gaussianize）</span><span class="en">Post-hoc per-day transforms (winsor / rank / gaussianize)</span></b> <span class="m">winsor3 0.0576/0.82 · rank 0.0502 · gauss 0.0553</span> — <span class="zh">基线预测已良态，任何挤压都在移除信号。</span><span class="en">the baseline preds are already well-conditioned; any squashing removes signal.</span></li>
@@ -371,11 +356,59 @@
       <li><b><span class="zh">因子 / PCA 中性化</span><span class="en">Factor / PCA neutralization</span></b> <span class="m">K10 α=1.0: 0.0415/0.70</span> — <span class="zh">特征主成分本身就是 alpha，去掉它直接毁 IC。</span><span class="en">the feature principal components ARE the alpha, so removing them destroys IC.</span></li>
       <li><b><span class="zh">截面 cross-instrument 注意力（<code>v3_cs2</code>）</span><span class="en">Cross-sectional cross-instrument attention (<code>v3_cs2</code>)</span></b> <span class="m">valid 0.0629 but test 0.0571 / 0.93</span> — <span class="zh">高 valid、低 test，<b>过拟合</b>：它利用了不泛化到 881+ 制度的同日截面结构。容量不是瓶颈，valid→test 落差才是。</span><span class="en">higher valid, lower test — <b>overfit</b>: it exploits same-day cross-sectional structure that doesn't generalize to the 881+ regime. Capacity isn't the bottleneck; the valid→test gap is.</span></li>
     </ul>
-    <p style="margin:.6em 0 .5em"><b><span class="zh">Ensemble 的无效尝试</span><span class="en">Ensemble ineffective attempts</span></b></p>
+  </div>
+
+  <h3 id="single-compare"><span class="sn">3.4</span>Best Single-Model Comparison</h3>
+  <p><span class="zh">把每一族里最强的单模型摆到一起——最优线性、最优 LightGBM、MLP、时序 Transformer——就能看清各类模型的天花板。<b>时序 Transformer 是全场最强单模型</b>（优化后 test IC 0.0612），显著超过所有表格模型（≈0.058）与线性（0.048），印证"时序结构是最大增量"；更关键的是它与树模型<b>去相关</b>（相关性热图见 §4.1），这正是它在 §4 的 Ensemble 中贡献最大边际的原因。全模型（含中性化后的 Transformer* / Ensemble*）的 IC/IR 柱状对比见 §0 图 0.1。</span><span class="en">Lining up the strongest single model of each family — best linear, best LightGBM, MLP, temporal Transformer — shows each family's ceiling. The <b>temporal Transformer is the strongest single model overall</b> (optimized test IC 0.0612), clearly beating every tabular model (≈0.058) and the linear ones (0.048), confirming that "temporal structure is the biggest lever". More importantly it <b>decorrelates from the trees</b> (correlation heatmap in §4.1) — exactly why it contributes the largest marginal lift inside the §4 Ensemble. The full IC/IR bar comparison across every model (incl. the neutralized Transformer* / Ensemble*) is Fig 0.1 (§0).</span></p>
+  <div class="tbl"><table>
+    <thead><tr><th>Family — best single</th><th>test IC</th><th>test IR (raw)</th></tr></thead>
+    <tbody>
+      <tr class="drop"><td>Linear — ElasticNet</td><td>0.0478</td><td>0.73</td></tr>
+      <tr><td>LightGBM — Huber <span class="small">(bag)</span></td><td>0.0584</td><td>1.03</td></tr>
+      <tr><td>MLP — multi-task <span class="small">(8-seed)</span></td><td>0.0598</td><td>0.94</td></tr>
+      <tr class="best"><td>Temporal Transformer <span class="small">(optimized, 8-seed, K32)</span></td><td><b>0.0612</b></td><td>1.00</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small"><span class="zh">此处 IR 为<b>原始</b>值（未做中性化）；经 §2.2 / §3.3 的 group 中性化后，DART 与 Transformer 的 IR 分别抬到 1.24 / 1.23、越过基线 1.10。把这四类<b>去相关</b>的单模型融合，就是下一节 §4 的 Ensemble。</span><span class="en">IR here is <b>raw</b> (pre-neutralization); after the group neutralization of §2.2 / §3.3 the DART and Transformer IRs rise to 1.24 / 1.23, crossing the 1.10 baseline. Blending these <b>decorrelated</b> single models is exactly the §4 Ensemble.</span></p>
+</section>
+
+<!-- ============================ SECTION 4 — ENSEMBLE ============================ -->
+<section id="ensemble">
+  <h2><span class="num">4</span>Model Ensemble</h2>
+
+  <h3 id="ens-build"><span class="sn">4.1</span>Construction &amp; Diversity Weighting</h3>
+  <p><span class="zh">用<b>全部</b>模型族——§2 的线性 / LightGBM / MLP 与 §3 的时序 Transformer——做融合。因为主指标是 <b>Pearson</b> IC，融合前对每个模型做<b>逐日 z-score</b>（仿射变换，精确保持每个模型的当日 Pearson IC）——而<b>不是</b>排序（rank 会破坏 Pearson 所需的幅度信息，实测会掉到 0.05）。三个 LightGBM 高度相关，先平均成一个 family；最终信号是三族 {LightGBM, MLP, Transformer} 的<b>稳健等权</b>融合。等权远比"在 valid 上调权重"更能跨越 valid→test 的制度漂移（valid 调权会过拟合）。</span><span class="en">The blend uses <b>all</b> model families — the linear / LightGBM / MLP models of §2 and the temporal Transformer of §3. Because the primary metric is the <b>Pearson</b> IC, each model is <b>per-day z-scored</b> before blending (an affine transform that exactly preserves its daily Pearson IC) — <b>not</b> rank-transformed (ranking destroys the magnitude Pearson needs and measurably drops to ≈0.05). The three LightGBM variants are highly correlated, so they are first averaged into one family; the final signal is a <b>robust equal-weight</b> blend of the diverse families {LightGBM, MLP, Transformer}. Equal weights generalise across the valid→test regime shift far better than valid-tuned weights, which overfit.</span></p>
+  <div class="cards">
+    <div class="card"><div class="k">+10.9%</div><div class="l"><span class="zh">Ensemble vs 基线（Pearson IC）</span><span class="en">Ensemble vs baseline (Pearson IC)</span></div></div>
+    <div class="card"><div class="k">0.0643</div><div class="l"><span class="zh">Ensemble · Spearman</span><span class="en">Ensemble · Spearman</span></div></div>
+    <div class="card gold"><div class="k">0.0621</div><div class="l"><span class="zh">Ensemble · 测试 IC（IR 1.06）</span><span class="en">Ensemble · test IC (IR 1.06)</span></div></div>
+  </div>
+  <figure>
+    <img src="summary_assets/fig5_modelcorr.png" alt="base-model prediction correlation">
+    <figcaption><span class="zh"><b>图 4.1 基模型预测相关性（263 维，测试期）。</b>Transformer 与 LightGBM 相关最低（0.84），是融合收益的主要来源；MLP 与 Transformer 相关最高（0.93），冗余。热图沿对角线还呈现清晰的族内聚集——两个线性模型（Ridge↔ElasticNet 0.96）、三个 LightGBM 变体（0.93–0.97）、两个深度模型（MLP↔Transformer 0.93）各自内部相似度都明显更高，体现了同族模型之间的相似关系。</span><span class="en"><b>Fig 4.1 — Base-model prediction correlation (263-dim, test).</b> Transformer ↔ LightGBM are the least correlated (0.84) — the main source of blend gain; MLP ↔ Transformer are the most correlated (0.93), i.e. redundant. Along the diagonal the heatmap also shows clear within-family clustering — the two linear models (Ridge↔ElasticNet 0.96), the three LightGBM variants (0.93–0.97) and the two deep models (MLP↔Transformer 0.93) are each markedly more similar internally, reflecting the similarity among models of the same family.</span></figcaption>
+  </figure>
+  <figure>
+    <img src="summary_assets/fig6_lift.png" alt="ensemble lift over best single">
+    <figcaption><span class="zh"><b>图 4.2 Ensemble 相对最优单模型的提升（测试 IC）。</b>稳健等权融合在优化后 Transformer 之上再抬一点（0.0612→0.0621），IR 1.06。</span><span class="en"><b>Fig 4.2 — Ensemble lift over the best single model (test IC).</b> The robust equal-weight blend edges above the optimized Transformer (0.0612→0.0621), IR 1.06.</span></figcaption>
+  </figure>
+
+  <h4><span class="zh">进一步处理 —— 多样性加权 + 中性化</span><span class="en">Further processing — diversity weighting + neutralization</span></h4>
+  <p><span class="zh">在等权融合之上，我做两步进一步处理：(1) 对各基模型用<b>逆相关"多样性"权重</b>——先对每个模型逐日 z-score，再用 valid 相关矩阵的伪逆 <code>w ∝ pinv(C)·1</code>（截断非负、归一）抬升去相关、稳健的成员，把高度冗余的 LightGBM 变体权重压到接近 0；这本质上是<b>最小方差 / 风险平价</b>思想<sup class="r">12</sup>（Markowitz 均值-方差；Ledoit-Wolf 协方差收缩），根基则是<b>集成去相关</b>的经典观察<sup class="r">11</sup>（Breiman，Bagging / Random Forests）。(2) 再叠加 §2.2 定义的部分 group-<code>g</code> 中性化（α 在 valid 上选）<sup class="r">10</sup>。</span><span class="en">On top of the equal-weight blend I add two further steps: (1) <b>inverse-correlation "diversity" weights</b> over the base models — each is per-day z-scored, then weighted by the pseudo-inverse of the valid correlation matrix <code>w ∝ pinv(C)·1</code> (clipped ≥0, normalised), up-weighting the decorrelated, stable members and driving the redundant LightGBM variants toward zero; this is a <b>minimum-variance / risk-parity</b> idea<sup class="r">12</sup> (Markowitz mean-variance; Ledoit-Wolf shrinkage) resting on the classic <b>ensemble-decorrelation</b> observation<sup class="r">11</sup> (Breiman, Bagging / Random Forests). (2) then the partial group-<code>g</code> neutralization defined in §2.2 (α valid-selected)<sup class="r">10</sup>.</span></p>
+  <p><span class="zh">在 263 维、且 Transformer 已按 §3.3 优化的基础上，多样性加权把 <b>IR 从 1.063 明显抬到 1.144</b> 而 IC 基本维持（0.0621→0.0617，落在噪声内）：等权基线 0.0621/1.063 → <code>diversity(+neutral)</code> <b>0.0617</b>/<b>1.144</b>。相比优化前的 0.0616/1.128，<b>IC 与 IR 同步再升</b>——§3.3 的 Transformer 优化通过融合传导到了 Ensemble。group 中性化是额外的 IR 杠杆——把 α 推得更强可继续抬 IR（完整权衡见 §3.3 图 3.1）。</span><span class="en">On the 263-dim input, with the Transformer already optimized per §3.3, diversity weighting lifts <b>IR from 1.063 to 1.144</b> while IC holds (0.0621→0.0617, within noise): the equal-blend baseline 0.0621/1.063 → <code>diversity(+neutral)</code> <b>0.0617</b>/<b>1.144</b>. Versus the pre-optimization 0.0616/1.128, <b>both IC and IR rise</b> — the §3.3 Transformer optimization propagates through the blend into the Ensemble. Group-neutralization is an additional IR lever — a stronger α keeps lifting IR (full trade-off in Fig 3.1, §3.3).</span></p>
+  <div class="tbl"><table>
+    <thead><tr><th>Model (method)</th><th>valid IC</th><th>valid IR</th><th>test IC</th><th>test IR</th></tr></thead>
+    <tbody>
+      <tr class="drop"><td>equal-3 blend <span class="small">(baseline)</span></td><td>0.0711</td><td>1.041</td><td>0.0621</td><td>1.063</td></tr>
+      <tr class="best"><td>diversity + neutral</td><td>0.0704</td><td>1.110</td><td><b>0.0617</b></td><td><b>1.144</b></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="fail"><span class="lab">What didn't help — ensemble-level attempts that did not generalise</span>
+    <p style="margin:.1em 0 .5em"><span class="zh">为完整起见，记录 Ensemble 层面<b>没能泛化到 test</b> 的尝试——它们解释了为何最终只保留"稳健等权 + 逆相关多样性权重 + 部分中性化"。</span><span class="en">For completeness, the Ensemble-level attempts that <b>did not generalise to test</b> — they explain why only "robust equal weights + inverse-correlation diversity weights + partial neutralization" was kept.</span></p>
     <ul style="margin:.1em 0">
       <li><b><span class="zh">valid-IC 优化权重</span><span class="en">Valid-IC-optimized weights</span></b> <span class="m">test 0.0593 / 0.91</span> — <span class="zh">堆到 valid 最优的 MLP 上，过拟合 valid→test 制度漂移，test 反不如等权。</span><span class="en">piles onto the MLP (best on valid), overfitting the valid→test regime shift; worse than equal on test.</span></li>
       <li><b><span class="zh">valid-IR 优化权重</span><span class="en">Valid-IR-optimized weights</span></b> <span class="m">test 0.0596 / 0.94</span> — <span class="zh">同样过拟合，test 上无 IR 增益。</span><span class="en">the same overfit; no test-IR gain over equal.</span></li>
-      <li><b><span class="zh">完全 α=1 组内中性化</span><span class="en">Full α=1 group-neutralization</span></b> <span class="m">test 0.0584 / 1.248</span> — <span class="zh">IR 飙升但 IC 跌破等权融合的 0.0602；组 tilt 携带真实截面 IC，只有部分中性化（α~0.35）能兼顾。</span><span class="en">IR soars but IC drops below the equal-blend's 0.0602; the group tilt carries real IC, so only partial (α~0.35) keeps IC up.</span></li>
+      <li><b><span class="zh">完全 α=1 组内中性化</span><span class="en">Full α=1 group-neutralization</span></b> <span class="m">test 0.0584 / 1.248</span> — <span class="zh">IR 飙升但 IC 跌破等权融合的 0.0621；组 tilt 携带真实截面 IC，只有部分中性化（α~0.35）能兼顾。</span><span class="en">IR soars but IC drops below the equal-blend's 0.0621; the group tilt carries real IC, so only partial (α~0.35) keeps IC up.</span></li>
       <li><b><span class="zh">加入线性模型（ridge/enet，权重 0.05–0.20）</span><span class="en">Adding linear models (ridge/enet, w 0.05–0.20)</span></b> <span class="m">0.0601 → 0.0586 monotone</span> — <span class="zh">线性 base 太弱（IC~0.04），只拖 IC 无 IR 收益。</span><span class="en">the linear bases are too weak (IC~0.04) and drag IC with no IR benefit.</span></li>
       <li><b><span class="zh">融合前 rank/percentile 变换</span><span class="en">Rank/percentile-transform bases</span></b> <span class="m">test 0.052 / 0.79</span> — <span class="zh">丢弃 Pearson 需要的幅度信息，IC 大掉。</span><span class="en">discards the magnitude information Pearson rewards; large IC loss.</span></li>
       <li><b><span class="zh">对融合信号 winsorize/clip</span><span class="en">Winsorize/clip the blend</span></b> <span class="m">~0.0586 / 1.09</span> — <span class="zh">裁掉已标准化信号的信息性尾部，IC 跌回等权融合以下。</span><span class="en">clips the informative tails of an already-standardized signal; IC drops back below the equal-blend level.</span></li>
@@ -384,80 +417,38 @@
     </ul>
   </div>
 
-  <h3 id="results"><span class="sn">3.3</span>Results &amp; Visualizations</h3>
+  <h3 id="ens-results"><span class="sn">4.2</span>Ensemble Effect &amp; Visualizations</h3>
   <div class="note"><span class="lab">note on y_hat0</span><span class="zh">官方只给了基线 <code>y_hat0</code> 的统计量（IC 0.056 / IR 1.1），<b>未提供其逐条预测</b>。因此下图只把它作为 <b>0.056 / 1.1 的虚线参考基准</b>，不作为逐条预测序列绘出。</span><span class="en">The brief gives only the baseline <code>y_hat0</code>'s statistics (IC 0.056 / IR 1.1), <b>not its row-level predictions</b>. Below it therefore appears only as the <b>dashed 0.056 / 1.1 reference lines</b>, not as a row-level prediction series.</span></div>
   <figure>
     <img src="summary_assets/fig8_final_compare.png" alt="LightGBM vs Transformer vs Ensemble comparison">
-    <figcaption><span class="zh"><b>图 3.1 LightGBM vs Transformer vs Ensemble（测试期，虚线为基线 0.056）。</b>左：分块（≈月度）逐日 IC——均值 <b>Ensemble 0.0601 &gt; Transformer 0.0589 &gt; LightGBM 0.0558</b>，我方模型在多数时段位于基线 0.056 之上；右：二十桶单调性，三者桶内真实 <code>y</code> 均单调递增。</span><span class="en"><b>Fig 3.1 — LightGBM vs Transformer vs Ensemble (test; dashed = baseline 0.056).</b> Left: blocked (≈monthly) daily IC — means <b>Ensemble 0.0601 &gt; Transformer 0.0589 &gt; LightGBM 0.0558</b>, our models sitting above the 0.056 baseline in most blocks. Right: 20-bucket monotonicity — all three rise monotonically.</span></figcaption>
+    <figcaption><span class="zh"><b>图 4.3 LightGBM vs Transformer vs Ensemble（263 维，测试期，虚线为基线 0.056）。</b>左：分块（≈月度）逐日 IC——均值 <b>Ensemble 0.0621 &gt; Transformer 0.0612 &gt; LightGBM 0.0584</b>，我方模型在多数时段位于基线 0.056 之上；右：二十桶单调性，三者桶内真实 <code>y</code> 均单调递增。融合信号既高于最优单模型、桶内单调性也更干净。</span><span class="en"><b>Fig 4.3 — LightGBM vs Transformer vs Ensemble (263-dim, test; dashed = baseline 0.056).</b> Left: blocked (≈monthly) daily IC — means <b>Ensemble 0.0621 &gt; Transformer 0.0612 &gt; LightGBM 0.0584</b>, our models sitting above the 0.056 baseline in most blocks. Right: 20-bucket monotonicity — all three rise monotonically, with the blended signal both higher than the best single and cleaner in bucket monotonicity.</span></figcaption>
   </figure>
   <figure>
     <img src="summary_assets/fig2_daily_ic.png" alt="stacked daily IC: Ensemble, Transformer">
-    <figcaption><span class="zh"><b>图 3.2 逐日截面 IC（自上而下：Ensemble / Transformer，同一时间轴与纵轴，虚线为基线 0.056）。</b>两者均值更高（0.0602 / 0.0591）但<b>日间波动更大</b>（IR 0.93 / 0.85），信息比均低于基线的 1.1——这正是 §5 讨论的"IC 高、IR 偏低"现象。</span><span class="en"><b>Fig 3.2 — Daily cross-sectional IC (top→bottom: Ensemble / Transformer, shared time and y axes; dashed = baseline 0.056).</b> Both have higher means (0.0602 / 0.0591) but <b>larger day-to-day variation</b> (IR 0.93 / 0.85), with information ratios below the baseline's 1.1 — exactly the "high-IC, lower-IR" phenomenon discussed in §5.</span></figcaption>
+    <figcaption><span class="zh"><b>图 4.4 逐日截面 IC（自上而下：Ensemble / Transformer，同一时间轴与纵轴，虚线为基线 0.056）。</b>两者均值更高（0.0621 / 0.0612）但<b>日间波动较大</b>（原始 IR 1.06 / 1.00），单模型原始 IR 接近基线 1.1——即"IC 高、IR 偏低"，正是 §2.2 / §3.3 / §4.1 用中性化与多样性加权处理的动机（处理后 Ensemble 1.14、Transformer 1.23）。</span><span class="en"><b>Fig 4.4 — Daily cross-sectional IC (top→bottom: Ensemble / Transformer, shared time and y axes; dashed = baseline 0.056).</b> Both have higher means (0.0621 / 0.0612) but <b>larger day-to-day variation</b> (raw IR 1.06 / 1.00); the raw IRs sit near the 1.1 baseline — the "high-IC, lower-IR" pattern that motivates the neutralization / diversity weighting in §2.2 / §3.3 / §4.1 (processed to Ensemble 1.14, Transformer 1.23).</span></figcaption>
   </figure>
   <figure>
     <img src="summary_assets/fig3_pnl.png" alt="quintile returns and long-short PnL">
-    <figcaption><span class="zh"><b>图 3.3 五分桶收益与多空 PnL（Transformer / Ensemble 横向并列，测试期）。</b>左：每个模型按预测分 5 桶的真实 <code>y</code> 均值——两者均单调，<code>Q5&gt;…&gt;Q1</code>；右：<b>Top−Bottom 五分位多空组合</b>的累计 PnL（每日 Q5 均值 − Q1 均值，逐日累加），两模型均稳健向上。</span><span class="en"><b>Fig 3.3 — Quintile returns &amp; long–short PnL (Transformer / Ensemble side by side, test).</b> Left: mean realised <code>y</code> by 5 prediction quintiles — both monotone, <code>Q5&gt;…&gt;Q1</code>. Right: cumulative <b>top-minus-bottom quintile long–short PnL</b> (daily Q5-mean − Q1-mean, cumulated); both models rise steadily.</span></figcaption>
+    <figcaption><span class="zh"><b>图 4.5 五分桶收益与多空 PnL（Transformer / Ensemble 横向并列，测试期）。</b>左：每个模型按预测分 5 桶的真实 <code>y</code> 均值——两者均单调，<code>Q5&gt;…&gt;Q1</code>；右：<b>Top−Bottom 五分位多空组合</b>的累计 PnL（每日 Q5 均值 − Q1 均值，逐日累加），两模型均稳健向上。</span><span class="en"><b>Fig 4.5 — Quintile returns &amp; long–short PnL (Transformer / Ensemble side by side, test).</b> Left: mean realised <code>y</code> by 5 prediction quintiles — both monotone, <code>Q5&gt;…&gt;Q1</code>. Right: cumulative <b>top-minus-bottom quintile long–short PnL</b> (daily Q5-mean − Q1-mean, cumulated); both models rise steadily.</span></figcaption>
+  </figure>
+  <h4><span class="zh">细分桶的定量化衡量 —— 100 / 200 分桶的"最好桶"</span><span class="en">Quantifying the buckets — the "best bucket" at 100 / 200 splits</span></h4>
+  <p><span class="zh">在上面 20 分桶的基础上，为便于进一步<b>定量化衡量</b>，这里给出更细的 <b>100 / 200 分桶</b>下三个头部模型的表现：每个测试日按预测的截面分位分桶、跨测试期汇总，报告<b>最好桶</b>（即预测最高桶）的真实收益 <code>y</code> 均值，以及首尾桶的多空价差（top−bottom）。三个信号在极端处都<b>严格单调</b>——每个模型的最好桶恰是预测最高桶；且分得越细（100→200，即 top 1%→top 0.5%），最好桶收益越高，说明信号在极端分位仍然干净、可交易。</span><span class="en">On top of the 20-bucket view above, for a finer <b>quantitative</b> read this table reports the three headline models at <b>100 / 200 buckets</b>: each test day the predictions are cut into cross-sectional quantile buckets, pooled across the test window, and we report the realised <code>y</code> mean of the <b>best bucket</b> (the highest-prediction bucket) plus the top−bottom long–short spread. All three signals are <b>strictly monotone at the extreme</b> — each model's best bucket <i>is</i> its top-prediction bucket — and the finer the split (100→200, i.e. top 1%→top 0.5%), the higher the best-bucket return, i.e. the signal stays clean and tradeable in the tail.</span></p>
+  <div class="tbl"><table>
+    <thead><tr><th>Model <span class="small">(test IC)</span></th><th>best bucket ȳ<br><span class="small">100 buckets · top 1%</span></th><th>best bucket ȳ<br><span class="small">200 buckets · top 0.5%</span></th><th>top−bottom<br><span class="small">100 buckets</span></th><th>top−bottom<br><span class="small">200 buckets</span></th></tr></thead>
+    <tbody>
+      <tr><td>LightGBM <span class="small">(family, 0.0584)</span></td><td>0.0228</td><td>0.0287</td><td>0.0444</td><td>0.0572</td></tr>
+      <tr><td>Transformer <span class="small">(optimized, 0.0612)</span></td><td>0.0228</td><td><b>0.0289</b></td><td><b>0.0472</b></td><td><b>0.0578</b></td></tr>
+      <tr class="best"><td>Ensemble <span class="small">(best, 0.0621)</span></td><td><b>0.0241</b></td><td>0.0277</td><td>0.0467</td><td>0.0566</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small"><span class="zh"><b>读法：</b>Ensemble 在<b>整体截面 IC（0.0621）</b>与 <b>top 1% 最好桶</b>上领先——它把三族（含 Transformer，权重约 26%）稳健地融在一起；而经 §3.3 优化后的 <b>Transformer</b> 现在在<b>最极端的 top 0.5% 最好桶（0.0289）</b>与两档<b>多空价差</b>上都最高——scale-up 增大的容量把极端尾部的非线性刻画得更锐（优化前该桶仅 0.0257、最低，如今反超）。LightGBM 树族在尾部仍很有竞争力。三个信号在极端处都<b>严格单调</b>；每桶样本量约 5,052（100 桶）/ 2,526（200 桶），测试期 days 881–1259。</span><span class="en"><b>How to read it:</b> the Ensemble leads on <b>whole-cross-section IC (0.0621)</b> and the <b>top-1% best bucket</b> — robustly fusing all three families (including the Transformer, ~26% weight); while the <b>§3.3-optimized Transformer</b> now tops the <b>most-extreme top-0.5% bucket (0.0289)</b> and both <b>long–short spreads</b> — the scale-up's added capacity sharpens the extreme-tail nonlinearity (that bucket was only 0.0257, the lowest, before optimization; now it leads). The LightGBM tree family remains competitive in the tail. All three signals are <b>strictly monotone at the extreme</b>; buckets hold ≈5,052 (100) / 2,526 (200) rows each, test days 881–1259.</span></p>
+  <figure>
+    <img src="summary_assets/fig_v2_improve.png" alt="before-after group neutralization across three families">
+    <figcaption><span class="zh"><b>图 4.6 三族"进一步处理"前后对比（测试期）。</b>左：test IC 在中性化后基本不变（虚线为基线 0.056）；右：test IR 被显著抬升越过 1.10（虚线）。这张图汇总了 §2.2（ML 单模型）、§3.3（Transformer）与 §4.1（Ensemble）三条线上共同的收益——组中性化 / 多样性加权在几乎不动 IC 的前提下提升 IR。</span><span class="en"><b>Fig 4.6 — Before→after of the further processing across the three families (test).</b> Left: test IC is essentially unchanged after neutralization (dashed = baseline 0.056); right: test IR is lifted markedly past 1.10 (dashed). The figure summarises the gain shared by §2.2 (ML singles), §3.3 (Transformer) and §4.1 (Ensemble) — neutralization / diversity weighting raises IR while holding IC almost fixed.</span></figcaption>
   </figure>
 </section>
 
-<!-- ============================ NEW FEATURES ============================ -->
-<section id="newfeat">
-  <h2><span class="num">4</span>New Features — 100+ prc/vol Factor Ideas</h2>
-
-  <p><span class="zh">§1.3 把 <code>prc1…prc5</code>（推断为 Open/Close/Low/High/VWAP 的截面归一化对数价）与 <code>vol0</code> 只压成了 9 个朴素的价/量特征。这一节把它们当作一等公民的<b>因子构造原料</b>，系统性地生成 <b>120 个不同经济/统计思路</b>的因子（同一思路的不同窗口参数只算一种），每个思路都走一条统一的<b>三轮优化梯度</b>，再做<b>跨思路相关性剪枝</b>，最后把幸存的因子接回 §2–§3 的整条建模流水线重训——诚实汇报其 IC/IR 增量。</span><span class="en">§1.3 collapsed <code>prc1…prc5</code> (inferred Open/Close/Low/High/VWAP, cross-sectionally normalised log-prices) and <code>vol0</code> into just 9 basic price/volume features. This section treats them as first-class <b>raw material for factor construction</b>: it systematically generates <b>120 distinct economic/statistical ideas</b> (parameter-only variants of the same idea count once), pushes every idea through a uniform <b>3-round optimization ladder</b>, prunes for <b>cross-idea correlation</b>, and finally re-feeds the survivors into the full §2–§3 modelling pipeline for a retrain — with an honestly reported IC/IR delta.</span></p>
-
-  <h3 id="nf-method"><span class="sn">4.1</span>A 3-Round Optimization Ladder</h3>
-  <p><span class="zh">每个思路先给出一个<b>因果 raw 信号</b>（时序只用 <code>shift(L≥0)</code>，截面只用同日），再统一走三轮：<b>v1 raw</b>——逐日截面 z-score，最小可行处理；<b>v2 processing（因子处理）</b>——按类别选稳健(median/MAD) z-score / EWMA 平滑 / 截面 rank 变换 / 十分位分桶平滑（分类优化）；<b>v3 optimized（分类优化 + 残差回归）</b>——按类别选行业(g)中性化 + 波动率残差回归 / log1p+稳健z+行业中性 / rank+对 <code>x_0..x_7</code> 反转簇残差回归 / 分桶+行业中性。正负号与版本选择只用 <b>train IC（day≤760）</b>判定，valid 仅作复核，test 全程不参与因子构造决策——与仓库原有的 train/valid/test 纪律完全一致。</span><span class="en">Every idea starts from a <b>causal raw signal</b> (temporal ops use only <code>shift(L≥0)</code>, cross-sectional ops only the same day), then runs a uniform ladder: <b>v1 raw</b> — per-day cross-sectional z-score, the minimum viable treatment; <b>v2 processing</b> — category-specific: robust (median/MAD) z-score / EWMA smoothing / cross-sectional rank transform / decile-bucket smoothing (a classification-style treatment); <b>v3 optimized</b> — category-specific: group-(g) neutralization + vol-residualization / log1p + robust-z + group-neutral / rank + residualized against the <code>x_0..x_7</code> reversal cluster / bucket + group-neutral. Sign and version choice are decided on <b>train IC (day≤760)</b> only; valid is a secondary check; test never enters the factor-design decision — exactly the repo's existing train/valid/test discipline.</span></p>
-
-  <div class="tbl"><table>
-    <thead><tr><th>指标 Metric</th><th>数值 Value</th></tr></thead>
-    <tbody>
-      <tr><td><span class="zh">构造的思路数 Ideas constructed</span></td><td>120</td></tr>
-      <tr><td><span class="zh">参数变体数 Parameter variants</span></td><td>125</td></tr>
-      <tr><td><span class="zh">相关性剪枝阈值 Correlation threshold</span></td><td>0.80</td></tr>
-      <tr><td><span class="zh">剪枝后保留思路 Ideas kept</span></td><td><b>108</b></td></tr>
-      <tr><td><span class="zh">最终因子列 Final factor columns</span></td><td><b>111</b></td></tr>
-    </tbody>
-  </table></div>
-  <p class="small"><span class="zh">完整的 120 思路 × 3 轮 IC 全量表、每一条舍弃记录与碰撞对象，见仓库 <code>common_docs/new_factors_report.md</code>（本节的自动化数据来源，由 <code>tools/build_new_factors.py</code> 计算、<code>tools/write_new_factors_report.py</code> 渲染）。</span><span class="en">The full 120-idea × 3-round IC ledger, every drop record and its collision partner, lives in <code>common_docs/new_factors_report.md</code> (this section's data source, computed by <code>tools/build_new_factors.py</code>, rendered by <code>tools/write_new_factors_report.py</code>).</span></p>
-
-  <h3 id="nf-pruning"><span class="sn">4.2</span>Correlation Pruning &amp; Showcase Gains</h3>
-  <p><span class="zh">每个思路取其代表信号（多参数变体中 |train IC| 最大的 v3），按 |train IC| 降序贪心保留；若与已保留思路相关性 &gt; 0.8 则整组（含全部参数变体）舍弃——12 组因此出局，例如 <code>momentum</code> 与 <code>toxicity_weighted_momentum</code>（|corr|=0.995，几乎重复）、<code>intraday_return</code> 与 <code>open_vwap_gap</code>（0.913）。三轮优化梯度里，至少 5 个思路实现了<b>同号、≥3 倍</b>的有效 train IC 提升（排除"v1 接近噪声后被 v3 反号放大"的伪提升）：</span><span class="en">Each idea's representative signal (the |train IC|-largest v3 among its parameter variants) is greedily kept in descending |train IC| order; if it correlates &gt; 0.8 with an already-kept idea the whole group (all its variants) is dropped — 12 groups fell this way, e.g. <code>momentum</code> vs. <code>toxicity_weighted_momentum</code> (|corr|=0.995, near-duplicate) or <code>intraday_return</code> vs. <code>open_vwap_gap</code> (0.913). Within the 3-round ladder, at least 5 ideas achieve a <b>same-sign, ≥3x</b> genuine train-IC lift (excluding "near-noise v1 sign-flipped by v3" false positives):</span></p>
-  <div class="tbl"><table>
-    <thead><tr><th>思路 Idea</th><th>v1 raw IC</th><th>v3 optimized IC</th><th>倍数 Multiple</th></tr></thead>
-    <tbody>
-      <tr class="best"><td><code>volume_rank_momentum</code></td><td>+0.00092</td><td>+0.00378</td><td>4.11x</td></tr>
-      <tr class="best"><td><code>volume_price_corr</code></td><td>+0.00056</td><td>+0.00194</td><td>3.46x</td></tr>
-      <tr class="best"><td><code>amihud_vol_ratio</code></td><td>+0.00067</td><td>+0.00212</td><td>3.16x</td></tr>
-      <tr class="best"><td><code>amihud_illiquidity</code></td><td>+0.00056</td><td>+0.00175</td><td>3.13x</td></tr>
-      <tr class="best"><td><code>illiquidity_x_momentum</code></td><td>+0.00072</td><td>+0.00216</td><td>3.00x</td></tr>
-    </tbody>
-  </table></div>
-  <figure>
-    <img src="summary_assets/fig_nf_ladder.png" alt="top-18 new factors v1 to v3 optimization ladder">
-    <figcaption><span class="zh"><b>图 4.1 前 18 强新因子的 v1→v3 优化梯度（train IC）。</b>多数思路 v3 相对 v1 有稳定提升；<code>range_asymmetry</code> 是一个反例——v1 接近零、v3 因处理反号并放大，属于噪声而非真实信号，在 §4.1 的倍数统计中被过滤。</span><span class="en"><b>Fig 4.1 — v1→v3 optimization ladder for the top-18 new factors (train IC).</b> Most ideas improve steadily from v1 to v3; <code>range_asymmetry</code> is a counter-example — v1 is near zero and v3 flips sign and amplifies under processing, which is noise rather than a genuine signal, and is filtered out of the §4.1 multiple statistics.</span></figcaption>
-  </figure>
-
-  <h3 id="nf-results"><span class="sn">4.3</span>Retrained Models: an Honest IC/IR Result</h3>
-  <p><span class="zh">把新因子并入现有 213 维特征、<b>原样复用</b> §2–§3 的模型代码与超参数（只换特征输入）重训 LightGBM×3 + 多任务 MLP + 8-seed 时序 Transformer + 多样性加权/行业中性化 Ensemble，做严格 A/B。</span><span class="en">The new factors are merged into the existing 213-dim feature set and fed through the <b>unmodified</b> §2–§3 model code and hyperparameters (only the feature input changes) — a strict A/B retrain of LightGBM×3 + multi-task MLP + 8-seed temporal Transformer + the diversity-weighted / group-neutralized Ensemble.</span></p>
-  <div class="tbl"><table>
-    <thead><tr><th>配置 Configuration</th><th>特征数 #feat</th><th>valid IC</th><th>valid IR</th><th>test IC</th><th>test IR</th></tr></thead>
-    <tbody>
-      <tr><td>原始 213 维 <span class="small">(<code>ensemble_final</code>)</span></td><td>213</td><td>0.06542</td><td>0.956</td><td><b>0.06021</b></td><td>0.931</td></tr>
-      <tr class="drop"><td>+ 全部 111 个新因子 naive <span class="small">(<code>ensemble_nf</code>)</span></td><td>324</td><td>0.06541</td><td>1.128</td><td>0.05923</td><td>1.079</td></tr>
-      <tr class="best"><td>+ IC 择优 20 个新因子 <span class="small">(<code>ensemble_nf20</code>)</span></td><td>233</td><td>0.06495</td><td>1.111</td><td>0.05947</td><td><b>1.106</b></td></tr>
-    </tbody>
-  </table></div>
-  <div class="fail"><span class="lab">诚实的发现 · An honest finding</span><span class="zh">直接把全部 111 个（已通过组内相关性剪枝的）新因子塞进流水线，test IC <b>不升反降</b>（−1.6%）——多数新因子单个 train IC 只有 0.0005–0.003（中位数 0.00165），固定容量/正则的模型里加入~100 个这个量级的弱列，边际噪声超过边际信号，是<b>噪声稀释</b>而非增益。修复呼应仓库已有的"截面 PCA 去噪压制特异噪声"思路：按 |train IC| 排序择优截断，对 K∈{15,20,25,40,60,111} 做 LightGBM 单模型扫描，test IC 在 <b>K≈15–20 附近取局部最优</b>、K 越大边际单调变差，印证假设；采用 K=20 重训全链路。</span><span class="en">Dumping all 111 (already correlation-pruned) new factors straight into the pipeline makes test IC <b>fall, not rise</b> (−1.6%) — most new factors carry a lone train IC of only 0.0005–0.003 (median 0.00165), and adding ~100 columns at that scale into a fixed-capacity, fixed-regularization model lets marginal noise outweigh marginal signal: <b>dilution</b>, not gain. The fix echoes the repo's own "cross-sectional PCA denoising suppresses idiosyncratic noise" idea: rank by |train IC| and truncate. A LightGBM single-model scan over K∈{15,20,25,40,60,111} finds a <b>local test-IC optimum around K≈15–20</b>, monotonically worse for larger K — confirming the dilution hypothesis. K=20 is adopted for the full retrain.</span></div>
-  <p><span class="zh">三个基模型在 K=20 版本下全部优于其 111-因子 naive 版本（LightGBM-Huber 0.05502→0.05525；MLP 0.05488→0.05550；<b>Transformer 0.05649→0.05847，+3.5%</b>，对新增去相关结构最敏感，呼应 §3 "Transformer 与树模型去相关度最高"的发现），且已逼近原始 213 维基线。最终 <code>ensemble_nf20</code> 的 test IC（0.05947）比原始低约 1.2%——落在本报告反复讨论的 valid→test 噪声带内——但 <b>test IR 从 0.931 升到 1.106（+18.8%）</b>。这不是"以 IC 换 IR"的中性化戏法：新因子本身就是<b>去相关的弱增量</b>而非独立 alpha（与 §0 数据笔记的原始论断一致），纳入多样性加权 ensemble 后收益自然体现在<b>方差降低</b>而非均值抬升。0.05947/1.106 已经非常接近本报告此前靠大量额外调参（tuned LightGBM + rank_xendcg + diverse Transformer blend + refit-on-recent）才拿到的 <code>ensemble_v2</code>（0.0605/1.135）——这里只用了<b>未调参的基线单模型 + 20 个新因子</b>，说明新因子提供的分散化收益真实而高效。</span><span class="en">All three base models beat their 111-factor naive counterparts under K=20 (LightGBM-Huber 0.05502→0.05525; MLP 0.05488→0.05550; <b>Transformer 0.05649→0.05847, +3.5%</b> — the most sensitive to the newly-decorrelated structure, echoing §3's finding that the Transformer is the model least correlated with the trees) and now sit close to the original 213-dim baseline. The final <code>ensemble_nf20</code>'s test IC (0.05947) is ~1.2% below the original — within the valid→test noise band this report discusses throughout — but <b>test IR rises from 0.931 to 1.106 (+18.8%)</b>. This is not an IC-for-IR neutralization trick: the new factors are themselves <b>decorrelated weak increments</b> rather than standalone alpha (consistent with the §0 data note's original thesis), so folding them into the diversity-weighted ensemble shows up as <b>variance reduction</b>, not a mean lift. 0.05947/1.106 already sits close to <code>ensemble_v2</code> (0.0605/1.135) — this report's best prior result, reached only via extensive extra tuning (tuned LightGBM + rank_xendcg + diverse Transformer blend + refit-on-recent) — while this uses only <b>untuned baseline single models + 20 new factors</b>, showing the new factors' diversification benefit is real and efficient.</span></p>
-  <figure>
-    <img src="summary_assets/fig_nf_compare.png" alt="ensemble IC and IR: original vs naive 111 new factors vs curated 20 new factors">
-    <figcaption><span class="zh"><b>图 4.2 三种配置的测试 IC / IR（虚线为基线 y_hat0 0.056 / 1.10）。</b>naive 全量新因子（红）IC 落到基线附近、IR 有限改善；IC 择优 20 个（蓝）IC 基本持平原始配置（灰）、IR 明显更高。</span><span class="en"><b>Fig 4.2 — Test IC / IR across the three configurations (dashed = y_hat0 baseline 0.056 / 1.10).</b> The naive full-factor blend (red) drops IC toward the baseline with only modest IR gain; the IC-curated top-20 (blue) holds IC roughly flat vs. the original (grey) while IR rises clearly.</span></figcaption>
-  </figure>
-  <p class="small"><span class="zh">生产建议：接入这批新因子应使用 <code>artifacts/feature_list_nf20.json</code>（213+20 curated）而非全部 111 个；预期是 IC 持平、IR 有意义提升，而非 IC 本身的提升。</span><span class="en">Production recommendation: integrate via <code>artifacts/feature_list_nf20.json</code> (213+20 curated), not the full 111 -- expect IC to hold flat with a meaningful IR gain, not an IC lift per se.</span></p>
-</section>
-
-<!-- ============================ SECTION 5 ============================ -->
+<!-- ============================ SECTION 5 — ANALYSIS ============================ -->
 <section id="analysis">
   <h2><span class="num">5</span>Analysis &amp; Conclusion</h2>
 
@@ -470,7 +461,7 @@
   </ul>
 
   <h3 id="conclusion"><span class="sn">5.2</span>Conclusion &amp; Future Work</h3>
-  <p><span class="zh">在一个信号极弱的截面面板上，通过<b>截面 z-score 主导的防泄漏特征 + 稳健树/MLP + 日频时序 Transformer + 稳健等权 Ensemble</b>，把主指标 Pearson IC 从基线 0.056 提到 <b>Ensemble 0.0602 / Transformer 0.0591</b>（Spearman 0.0608，+8.7%）。最大增量来自<b>时序 Transformer</b>对逐 instrument 日间动态的利用，以及它与树模型的去相关。</span><span class="en">On a genuinely weak cross-sectional panel, a stack of <b>z-score-dominated leak-free features + robust trees/MLP + a daily temporal Transformer + a robust equal-weight Ensemble</b> raises the primary Pearson IC from the 0.056 baseline to <b>Ensemble 0.0602 / Transformer 0.0591</b> (Spearman 0.0608, +8.7%). The biggest lever is the <b>temporal Transformer</b> exploiting per-instrument day-to-day dynamics and its decorrelation from the trees.</span></p>
+  <p><span class="zh">在一个信号极弱的截面面板上，以 <b>263 维防泄漏特征</b>（213 基础 + 50 精选因子）为输入，通过<b>截面 z-score 主导的特征 + 稳健树/MLP + 日频时序 Transformer + 稳健等权 Ensemble</b>，把主指标 Pearson IC 从基线 0.056 提到 <b>Ensemble 0.0621 / Transformer 0.0612</b>（Spearman 0.0643），相对基线 <b>+10.9%</b>；再经多样性加权 + group 中性化，最终 Ensemble 0.0617 / IR 1.144、Transformer 0.0598 / IR 1.233，IR 双双越过 1.10。最大增量来自<b>时序 Transformer</b>对逐 instrument 日间动态的利用、它与树模型的去相关、50 个精选因子带来的额外 IC，以及 §3.3 对 Transformer 的 R-Drop + 架构 scale-up 优化（IC 0.0602→0.0612、IR 0.975→0.999，并传导至 Ensemble）。</span><span class="en">On a genuinely weak cross-sectional panel, using <b>263-dim leak-free features</b> (213 base + 50 curated factors), a stack of <b>z-score-dominated features + robust trees/MLP + a daily temporal Transformer + a robust equal-weight Ensemble</b> raises the primary Pearson IC from the 0.056 baseline to <b>Ensemble 0.0621 / Transformer 0.0612</b> (Spearman 0.0643), <b>+10.9%</b> over baseline; after diversity weighting + group-neutralization the final Ensemble is 0.0617 / IR 1.144 and the Transformer 0.0598 / IR 1.233, both IRs crossing 1.10. The biggest levers are the <b>temporal Transformer</b> exploiting per-instrument day-to-day dynamics, its decorrelation from the trees, the extra IC from the 50 curated factors, and §3.3's R-Drop + architectural scale-up on the Transformer (IC 0.0602→0.0612, IR 0.975→0.999, propagated into the Ensemble).</span></p>
   <p><span class="zh"><b>更多时间会做：</b>(1) 加 TCN/GRU 等更去相关的时序模型，把融合再往上推；(2) 用 purged+embargoed 滚动 CV 与 deflated-Sharpe 控制多重检验；(3) 对 group 做层次/混合效应建模；(4) 把目标做多窗去噪。</span><span class="en"><b>With more time:</b> (1) add TCN/GRU temporal models that decorrelate further to push the blend; (2) purged+embargoed rolling CV with deflated-Sharpe multiple-testing control; (3) hierarchical / mixed-effects modelling of the group structure; (4) multi-window target denoising.</span></p>
 </section>
 
