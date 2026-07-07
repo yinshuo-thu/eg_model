@@ -163,6 +163,7 @@
       </ol>
     </li>
     <li><a href="#references">References</a></li>
+    <li><a href="#appendix">Appendix — Factor taxonomy &amp; ablation</a></li>
   </ol>
     </li>
   </ol>
@@ -557,6 +558,33 @@
       <li>M. López de Prado. <i>Advances in Financial Machine Learning.</i> Wiley, 2018 (triple-barrier labelling, meta-labelling, purged/embargoed CV).</li>
       <li>D. Bailey, M. López de Prado. "The Deflated Sharpe Ratio: Correcting for Selection Bias, Backtest Overfitting and Non-Normality." <i>Journal of Portfolio Management</i> 40(5), 2014.</li>
   </ol></div>
+</section>
+
+<!-- ============================ APPENDIX ============================ -->
+<section id="appendix">
+  <h2><span class="num">A</span>Appendix — The 263 Factors: Taxonomy &amp; Ablation</h2>
+  <p><span class="zh">全部原始字段只有 <code>x_0…x_85</code>（86 个匿名因子）、<code>prc1…prc5</code>（推断为 Open/Close/Low/High/VWAP 的截面归一化对数价）、成交量 <code>vol0</code>、组别 <code>g</code>，以及目标 <code>y</code> 的历史。本报告用到的 <b>263 个防泄漏因子</b>按<b>生成方式</b>可分为三类：</span><span class="en">The only raw fields are <code>x_0…x_85</code> (86 anonymous factors), <code>prc1…prc5</code> (inferred Open/Close/Low/High/VWAP as cross-sectionally-normalised log-prices), volume <code>vol0</code>, group id <code>g</code>, and the history of the target <code>y</code>. The report's <b>263 leak-free factors</b> fall into three categories by <b>how they are constructed</b>:</span></p>
+  <ul>
+    <li><b><span class="zh">① 原始 x 的直接变形（188）</span><span class="en">① Direct transforms of the raw x (188)</span></b> — <span class="zh">直接从 86 个 <code>x</code> 变形而来：<b>逐日截面 z-score</b>（86）、最强 30 个 <code>x</code> 的<b>时序滞后 / 5 日动量 / 10 日均值</b>，以及对 <code>x</code> 块做<b>截面 PCA 去噪</b>（12 个主成分）。全部 <code>shift()≥0</code>、只用同日截面，天然防泄漏。</span><span class="en">obtained straight from the 86 <code>x</code>: <b>per-day cross-sectional z-score</b> (86), plus <b>temporal lag / 5-day momentum / 10-day mean</b> of the strongest 30 <code>x</code>'s, and a <b>cross-sectional PCA denoising</b> of the <code>x</code> block (top-12 components). All <code>shift()≥0</code> and same-day-only — leak-free by construction.</span></li>
+    <li><b><span class="zh">② 基础字段的统计量（25）</span><span class="en">② Statistics of the base fields (25)</span></b> — <span class="zh">由 <code>prc1…5</code> / <code>vol0</code> / <code>g</code> / <code>y</code> 历史算出的汇总量：价格的 mean/std/range/skew/动量、成交量水平与变化、group 的<b>滞后组收益</b>与<b>扩张窗 target-encoding</b>（截至前一日，无泄漏）、以及 <code>y</code> 的滞后 / 滚动波动 / EWMA。</span><span class="en">summary statistics from <code>prc1…5</code> / <code>vol0</code> / <code>g</code> / past <code>y</code>: price mean/std/range/skew/momentum, volume level &amp; change, the group's <b>lagged return</b> and <b>expanding-window target-encoding</b> (up to the previous day, leak-free), and <code>y</code> lags / rolling-vol / EWMA.</span></li>
+    <li><b><span class="zh">③ 额外构造的复杂因子（50）</span><span class="en">③ Additionally-constructed complex factors (50)</span></b> — <span class="zh">在①②之外专门挖掘的更复杂因子——<b>x-空间的监督式组合</b>与 <b>prc/vol 的非线性构造</b>，每个都经<b>三阶段前向漏斗</b>（train≤760 发现 → val 门 761–820 → 严格 conf 门 821–880，test 全程封存）逐个验证过真实边际增量。完整 formula / IC / 相关性见<b><a href="factor_library.html">因子库页面</a></b>。</span><span class="en">the more complex factors mined on top of ①②: <b>supervised combinations over the x-space</b> and <b>non-linear prc/vol constructions</b>, each vetted one-by-one through the <b>three-stage forward funnel</b> (discovery train≤760 → val gate 761–820 → strict conf gate 821–880, test sealed) for a genuine marginal contribution. Full formulas / IC / correlations on the <b><a href="factor_library.html">Factor Library page</a></b>.</span></li>
+  </ul>
+
+  <h3 id="appendix-abl"><span class="sn">A.1</span>Cumulative ablation — does each factor batch actually help?</h3>
+  <p><span class="zh">把三类因子做成<b>累积三批</b>——F1 = 仅①（188）、F2 = ①+②（213）、F3 = ①+②+③（263）——在每一批上<b>用同一套 submit 默认 Ensemble</b>（LightGBM + 多任务 MLP + 时序 Transformer，逐日 z-score → 多样性加权 → group 中性化）从头重训，只看 test（days 881–1259）。协议全程一致（同 seed 数、同超参），因此差异纯粹来自<b>因子批次</b>。</span><span class="en">The three categories are stacked into <b>three cumulative batches</b> — F1 = ① only (188), F2 = ①+② (213), F3 = ①+②+③ (263) — and on each I retrain the <b>same submit-default Ensemble</b> (LightGBM + multi-task MLP + temporal Transformer; per-day z-score → diversity weighting → group-neutralization) from scratch, scored once on test (days 881–1259). The protocol is identical throughout (same seed count, same hyper-parameters), so the differences come purely from the <b>factor batch</b>.</span></p>
+  <div class="tbl"><table>
+    <thead><tr><th>Feature set (cumulative)</th><th>#feat</th><th>test IC</th><th>test IR</th><th>decile Q10−Q1</th><th>Δ vs prev</th></tr></thead>
+    <tbody>
+      <tr><td>F1 — ① raw-x transforms</td><td>188</td><td>0.0576</td><td>1.233</td><td>+0.0200</td><td>—</td></tr>
+      <tr class="best"><td>F2 — + ② base-field statistics</td><td>213</td><td>0.0587</td><td>1.190</td><td>+0.0198</td><td>IC +0.0011</td></tr>
+      <tr class="best"><td>F3 — + ③ constructed factors</td><td>263</td><td><b>0.0601</b></td><td><b>1.284</b></td><td><b>+0.0205</b></td><td>IC +0.0014</td></tr>
+    </tbody>
+  </table></div>
+  <figure>
+    <img src="summary_assets/fig_ablation.png" alt="cumulative factor-batch ablation: IC, IR, decile buckets">
+    <figcaption><span class="zh"><b>图 A.1 因子批次累积消融（同一 submit Ensemble，测试期 days 881–1259）。</b>(A) test IC <b>随每加入一批因子单调抬升</b>（0.0576→0.0587→0.0601）；(B) test IR 三批均稳在基线 1.10 之上、最终 263 维（F3）最高（1.284）；(C) 十分位单调性 F1 vs F3——F3 桶内真实 <code>y</code> 的 Q10−Q1 价差更宽。<b>主指标 IC 的单调递增说明每一批都是正增量</b>：②基础字段统计量主要贡献 IC，③构造因子则同时抬升 IC 与 IR。</span><span class="en"><b>Fig A.1 — Cumulative factor-batch ablation (same submit Ensemble; test days 881–1259).</b> (A) test IC <b>rises monotonically with each batch added</b> (0.0576→0.0587→0.0601); (B) test IR stays above the 1.10 baseline for all three and is highest at the full 263-dim set (F3, 1.284); (C) decile monotonicity F1 vs F3 — a wider Q10−Q1 spread at F3. <b>The monotonic rise of the primary metric (IC) shows each batch is a positive increment</b>: ② base-field statistics mainly contribute IC, ③ constructed factors lift both IC and IR.</span></figcaption>
+  </figure>
+  <p class="small"><span class="zh">说明：此处为受控消融（统一协议、Transformer 取 3-seed 以便三批可比），数值口径与正文 §4 的生产 Ensemble（8-seed、优化后 Transformer）略有差异，但<b>相对趋势一致</b>——正文的生产模型即 F3 的更充分训练版本。</span><span class="en">Note: this is a controlled ablation (uniform protocol, 3-seed Transformer so the three batches are comparable); the absolute scale differs slightly from the production Ensemble in §4 (8-seed, §3.3-optimized Transformer), but the <b>relative trend is identical</b> — the production model is simply a more fully-trained version of F3.</span></p>
 </section>
 </main>
 
