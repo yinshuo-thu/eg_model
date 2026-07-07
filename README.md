@@ -150,7 +150,7 @@ python ML_ensemble/scripts/run_ensemble.py          # diversity-weight + neutral
 python tools/gen_figs.py                             # figures
 ```
 
-### Deployable OOS package — `submit/`
+### Deployable OOS package — [`submit/`](https://github.com/yinshuo-thu/eg_model/tree/main/submit)
 
 `submit/` is the self-contained, causal, **all-data-trained** package for scoring
 a held-out OOS period (see `submit/README.md`). It regenerates the full **250
