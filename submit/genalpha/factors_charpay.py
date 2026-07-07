@@ -160,10 +160,22 @@ def _finalize(ctx, out, final):
         fs = s
     d = pd.DataFrame({"p": fs.to_numpy(), "y": ctx.y, "day": ctx.day_vals}).dropna()
     d = d[d.day <= TRAIN_END]
-    tic = d.groupby("day").apply(lambda g: g.p.corr(g.y)).mean()
+    tic = _train_ic_scalar(d)          # scalar (nan if no train days -> keep sign)
     if np.isfinite(tic) and tic < 0:
         fs = -fs
     return np.nan_to_num(fs.to_numpy())
+
+
+def _train_ic_scalar(d) -> float:
+    """Mean per-day cross-sectional IC of columns p vs y over the rows in d, as a
+    guaranteed scalar. Returns nan when there are no usable (train) days — e.g. an
+    OOS-only slice — so callers keep the factor's sign unchanged instead of crashing
+    on an empty/ambiguous groupby result."""
+    ics = []
+    for _, g in d.groupby("day"):
+        if len(g) >= 3 and g["p"].std() > 0 and g["y"].std() > 0:
+            ics.append(g["p"].corr(g["y"]))
+    return float(np.nanmean(ics)) if ics else np.nan
 
 
 def _charpay(ctx, carrier_h, std, payoff, wmode, wa, wb=None, *,

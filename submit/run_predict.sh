@@ -4,15 +4,19 @@
 # Usage:
 #   ./run_predict.sh INPUT OUTPUT [MODEL] [DEVICE]
 #
-#   INPUT   raw panel (.parquet or .csv) with the data.csv schema
+#   INPUT   raw panel in the data.csv schema (.csv or .parquet)
 #           (day, instrument_id, x_0..x_85, prc1..prc5, vol0, g[, y]); y optional.
-#   OUTPUT  where to write predictions (.parquet or .csv): [day, instrument_id, y_hat]
+#   OUTPUT  where to write predictions (.csv or .parquet): [day, instrument_id, y_hat]
 #   MODEL   ensemble (default) | lightgbm | mlp | transformer
 #   DEVICE  auto (default) | cpu | cuda      (CUDA failures fall back to CPU automatically)
 #
+# If INPUT still carries y for the scored rows, IC/IR are printed and an
+# <OUTPUT>_metrics.json is written; otherwise predictions only.
+#
 # Examples:
+#   ./run_predict.sh data.csv preds.csv                 # point straight at a data.csv
+#   ./run_predict.sh data.csv preds.csv ensemble cpu
 #   ./run_predict.sh oos.parquet preds.parquet
-#   ./run_predict.sh oos.csv preds.csv ensemble cpu
 #
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

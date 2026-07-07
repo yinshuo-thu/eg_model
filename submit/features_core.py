@@ -5,14 +5,16 @@ can be *fit* on labelled history and then *applied* to new rows.  The only
 fit-time state is (a) the list of strongest ``x`` columns (ranked by |daily IC|)
 that receive a temporal expansion and (b) the 12 cross-sectional PCA loadings.
 Both are saved to ``weights/feature_artifacts.json`` so that predictions on new
-out-of-sample rows recompute *exactly* the same 213 features the models were
+out-of-sample rows recompute *exactly* the same 200 base features the models were
 trained on.
 
-Every transform is causal:
+Every transform is causal, and NO feature reads an instrument's own y:
   * temporal ops use only ``shift() >= 1`` within an instrument,
   * cross-sectional ops (z-score / PCA projection / group means) use only the
     same day's rows,
-  * the group target-encoding is an expanding mean over *prior* days only.
+  * the autoregressive y-history and past-y group encodings have been removed, so
+    the base features are pure functions of x / prc / vol / g and are fully
+    computable on an OOS block whose label y is withheld.
 
 Public API
 ----------
@@ -56,7 +58,7 @@ def _daily_ic(pred: pd.Series, y: pd.Series, day: pd.Series) -> float:
 
 # ----------------------------------------------------------------------------- main
 def compute_features(raw: pd.DataFrame, artifacts: dict | None = None):
-    """Build the 213 leak-free features.
+    """Build the 200 leak-free base features (no autoregressive y-history).
 
     Parameters
     ----------
@@ -70,7 +72,7 @@ def compute_features(raw: pd.DataFrame, artifacts: dict | None = None):
     -------
     (feat_df, artifacts)
         feat_df sorted by (day, instrument_id) with columns
-        [day, instrument_id, g, y, y_xs, <213 features>].
+        [day, instrument_id, g, y, y_xs, <200 features>].
     """
     fit = artifacts is None
     df = raw.copy()
@@ -109,23 +111,11 @@ def compute_features(raw: pd.DataFrame, artifacts: dict | None = None):
     gi = df.groupby("instrument_id", sort=False)
     iid = df["instrument_id"]
 
-    # ---- 2) temporal features on y (autocorrelation / momentum / vol) ----
-    yv = df["y"]
-    tmp = {}
-    for L in (1, 2, 3, 5):
-        tmp[f"y_lag{L}"] = gi["y"].shift(L)
-    ylag1 = gi["y"].shift(1)
-    for W in (5, 10, 20):
-        tmp[f"y_roll{W}"] = ylag1.groupby(iid, sort=False).transform(
-            lambda s: s.rolling(W, min_periods=2).mean())
-        tmp[f"y_vol{W}"] = ylag1.groupby(iid, sort=False).transform(
-            lambda s: s.rolling(W, min_periods=2).std())
-    tmp["y_ewm"] = ylag1.groupby(iid, sort=False).transform(
-        lambda s: s.ewm(span=10, min_periods=2).mean())
-    ytemp = pd.DataFrame(tmp, index=df.index)
-    ytemp_z = cs_zscore(pd.concat([df["day"], ytemp], axis=1), list(tmp.keys())).fillna(0.0)
-    ytemp_z.columns = [f"{c}_z" for c in ytemp_z.columns]
-    feat = pd.concat([feat, ytemp_z.astype("float32")], axis=1)
+    # ---- 2) [REMOVED] autoregressive y-history features (y_lag{1,2,3,5} / y_roll /
+    #         y_vol / y_ewm).  These read an instrument's OWN recently-realised y as a
+    #         direct model input, which is unavailable when the OOS label is withheld
+    #         (and would leak if the forward horizon were >1 day).  Dropped so every
+    #         feature is computable on a withheld-label OOS block.
 
     # ---- 3) temporal features on strongest x's: lag1, momentum(5), rolling mean(10) ----
     xtmp = {}
@@ -161,30 +151,16 @@ def compute_features(raw: pd.DataFrame, artifacts: dict | None = None):
     feat = pd.concat([feat, pv_z.astype("float32")], axis=1)
 
     # ---- 5) group-aware features (g) ----
-    # group momentum: per-(day, g) mean of lagged-y (leak-free group return)
-    glag = pd.DataFrame({"day": df["day"], "g": df["g"], "ylag1": ylag1.fillna(0.0)})
-    gmean = glag.groupby(["day", "g"], sort=False)["ylag1"].transform("mean")
-    feat["grp_ylag_mean"] = cs_zscore(
-        pd.DataFrame({"day": df["day"], "v": gmean.values}), ["v"]).fillna(0.0)["v"].astype("float32")
-    # group mean of strongest contemporaneous signal (cross-sectional group tilt)
+    # [REMOVED] grp_ylag_mean (per-(day,g) mean of an instrument's lagged y) — an
+    #           autoregressive past-y group feature; dropped for a leak-safe OOS.
+    # group mean of the strongest contemporaneous x signal (cross-sectional group
+    # tilt) — pure-x, kept.
     best = top_x[0]
     gbest = pd.DataFrame({"day": df["day"], "g": df["g"], "v": xz[f"{best}z"].values})
     gbm = gbest.groupby(["day", "g"], sort=False)["v"].transform("mean")
     feat["grp_xbest_mean"] = gbm.astype("float32").fillna(0.0)
-    # group target-encoding: expanding mean of y per group up to the PREVIOUS day
-    # (NaN-robust: uses only observed prior days, so prediction days with y=NaN
-    #  read the last available group mean instead of poisoning the cumsum).
-    dg = df.groupby(["g", "day"], sort=False)["y"].mean().reset_index()
-    dg = dg.sort_values(["g", "day"])
-    yy = dg["y"]
-    obs = yy.notna().astype("float64")
-    csum = yy.fillna(0.0).groupby(dg["g"]).cumsum() - yy.fillna(0.0)
-    ccnt = obs.groupby(dg["g"]).cumsum() - obs
-    dg["g_te"] = np.where(ccnt.to_numpy() > 0, csum.to_numpy() / np.clip(ccnt.to_numpy(), 1, None), 0.0)
-    te_map = {(int(r.g), int(r.day)): float(r.g_te) for r in dg.itertuples()}
-    feat["grp_te"] = np.array(
-        [te_map.get((int(g_), int(d_)), 0.0) for g_, d_ in zip(df["g"].values, df["day"].values)],
-        dtype="float32")
+    # [REMOVED] grp_te (expanding-window group target-encoding of y) — a past-y group
+    #           feature; dropped for a leak-safe OOS.
 
     # ---- 6) cross-sectional PCA factors (denoise common structure of raw x) ----
     xzcols = [f"{c}z" for c in XCOLS]

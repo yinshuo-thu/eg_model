@@ -1,18 +1,22 @@
-"""genalpha — regenerate the full 263-feature matrix (213 causal base features +
+"""genalpha — regenerate the full 250-feature matrix (200 causal base features +
 50 curated alpha factors) from a RAW panel, causally, so the same code that made
 the training features also makes them on a brand-new OOS block.
 
 Public API:
-    compute_263(panel_df, artifacts=None) -> (feat_df, artifacts, feature_list)
+    compute(panel_df, artifacts=None) -> (feat_df, artifacts, feature_list)
 
 `panel_df` schema: day, instrument_id, g, x_0..x_85, prc1..prc5, vol0[, y].
 Include enough per-instrument history before the day(s) you want scored (the
 temporal features and the 50 factors' EWM/rolling states warm up; supervised
 factors freeze once y runs out, so pass the labelled history too).
 
-The 213 base come from submit/features_core.py (proven causal, frozen top-x/PCA
-artifacts). The 50 factors come from the Ctx-based factor modules; every factor's
-supervised state freezes on unlabelled (OOS) days.
+The 200 base come from submit/features_core.py (proven causal, frozen top-x/PCA
+artifacts; NO autoregressive y-history — every base feature is a pure function of
+x / prc / vol / g). The 50 curated factors come from the Ctx-based factor modules;
+each is a SUPERVISED factor that learns cross-sectional weights/signs/payoffs from
+*past* y (>=1-day delay) and applies them to the current day's x — its supervised
+state FREEZES on unlabelled (OOS) days, so no row ever reads its own or any future
+y and the whole matrix is computable on a withheld-label OOS block.
 """
 from __future__ import annotations
 import json, importlib
@@ -42,8 +46,8 @@ def _collect_factors(ctx) -> dict:
     return out
 
 
-def compute_263(panel_df: pd.DataFrame, artifacts: dict | None = None):
-    # 213 base features (sorted day,instrument_id) + frozen artifacts
+def compute(panel_df: pd.DataFrame, artifacts: dict | None = None):
+    # 200 base features (sorted day,instrument_id) + frozen artifacts
     feat, artifacts = features_core.compute_features(panel_df, artifacts=artifacts)
 
     # attach the SAME live PCA controls the base uses onto the panel, so the 50
@@ -70,6 +74,12 @@ def compute_263(panel_df: pd.DataFrame, artifacts: dict | None = None):
 
     base_list = list(artifacts["feature_list"])
     feature_list = base_list + list(order)
-    artifacts = dict(artifacts, feature_list_263=feature_list, base_feature_list=base_list,
-                     factor_list=list(order))
+    # feature_list_full is the canonical 250-col training/inference order; the
+    # legacy feature_list_263 alias is kept so older callers still resolve.
+    artifacts = dict(artifacts, feature_list_full=feature_list, feature_list_263=feature_list,
+                     base_feature_list=base_list, factor_list=list(order))
     return feat, artifacts, feature_list
+
+
+# backward-compatible alias (older scripts import compute_263)
+compute_263 = compute

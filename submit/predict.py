@@ -68,7 +68,9 @@ class Predictor:
         self.device = device
         self.artifacts = json.load(open(self.wdir / "feature_artifacts.json"))
         self.cfg = json.load(open(self.wdir / "ensemble_config.json"))
-        self.fcols = self.artifacts.get("feature_list_263", self.artifacts["feature_list"])
+        self.fcols = (self.artifacts.get("feature_list_full")
+                      or self.artifacts.get("feature_list_263")
+                      or self.artifacts["feature_list"])
         self.Fn = len(self.fcols)
         self.K = int(self.cfg.get("K", 32))
         # v2 Transformer arch (must match training to load the weights)
@@ -194,8 +196,8 @@ class Predictor:
         if model not in allowed:
             raise ValueError(f"model={model!r}; choose one of {sorted(allowed)}")
         if verbose:
-            print("[predict] building 263 features from raw (this is the slow step) ...", flush=True)
-        feat, _, _ = genalpha.compute_263(panel_df, artifacts=self.artifacts)
+            print(f"[predict] building {self.Fn} features from raw (this is the slow step) ...", flush=True)
+        feat, _, _ = genalpha.compute(panel_df, artifacts=self.artifacts)
 
         # ---- decide which days to score ----
         udays = np.sort(feat["day"].unique())
@@ -294,6 +296,41 @@ def predict(panel_df: pd.DataFrame, predict_days=None,
     return _PREDICTOR.predict(panel_df, predict_days=predict_days, model=model, verbose=verbose)
 
 
+def score_ic(out: pd.DataFrame, panel_df: pd.DataFrame) -> dict | None:
+    """If the raw panel carries a realised ``y`` for the predicted rows, score the
+    prediction with the task metric: mean daily cross-sectional Pearson IC (primary)
+    and Spearman IC, the IC information ratio (mean/std of the daily-IC series), and
+    the fraction of days with positive IC.  Returns None when no overlapping
+    (day, instrument_id) has a finite y — i.e. a pure OOS block with the label
+    withheld — in which case the caller just emits predictions."""
+    if "y" not in panel_df.columns:
+        return None
+    truth = panel_df[["day", "instrument_id", "y"]].copy()
+    truth["day"] = truth["day"].astype(int)
+    truth["instrument_id"] = truth["instrument_id"].astype(int)
+    m = out.merge(truth, on=["day", "instrument_id"], how="left").dropna(subset=["y", "y_hat"])
+    if m.empty:
+        return None
+
+    def _daily(method):
+        s = m.groupby("day").apply(
+            lambda g: g["y_hat"].corr(g["y"], method=method)
+            if g["y_hat"].std() > 0 and g["y"].std() > 0 else np.nan,
+            include_groups=False)
+        return s.dropna()
+
+    p = _daily("pearson")
+    sp = _daily("spearman")
+    if p.empty:
+        return None
+    ic = float(p.mean())
+    ir = float(ic / p.std()) if p.std() > 0 else float("nan")
+    return {"n_days": int(p.shape[0]), "n_rows": int(len(m)),
+            "pearson_ic": round(ic, 5), "ir": round(ir, 3),
+            "spearman_ic": round(float(sp.mean()), 5),
+            "pct_days_pos": round(float((p > 0).mean()), 3)}
+
+
 def _main():
     ap = argparse.ArgumentParser(description="Engineering-Gates OOS prediction")
     ap.add_argument("--input", required=True, help="raw panel parquet/csv (schema: day, instrument_id, x_0..x_85, prc1..prc5, vol0, g[, y])")
@@ -322,6 +359,22 @@ def _main():
     print(f"[predict] wrote {len(out):,} rows -> {outp}  "
           f"(days {out['day'].min()}-{out['day'].max()}, "
           f"y_hat finite={np.isfinite(out['y_hat']).mean():.3f})", flush=True)
+
+    # If the input carries a realised y for the scored rows, also report IC/IR;
+    # otherwise (label withheld) we just emit the predictions above.
+    metrics = score_ic(out, df)
+    if metrics is not None:
+        print(f"[predict] OOS score (y present) — "
+              f"IC {metrics['pearson_ic']:.5f}  IR {metrics['ir']:.3f}  "
+              f"Spearman {metrics['spearman_ic']:.5f}  "
+              f"pos-days {metrics['pct_days_pos']:.2f}  "
+              f"({metrics['n_days']} days, {metrics['n_rows']:,} rows)", flush=True)
+        mpath = str(outp.with_suffix("")) + "_metrics.json"
+        json.dump(metrics, open(mpath, "w"), indent=2)
+        print(f"[predict] wrote metrics -> {mpath}", flush=True)
+    else:
+        print("[predict] no realised y for the scored rows -> predictions only "
+              "(no IC/IR).", flush=True)
 
 
 if __name__ == "__main__":

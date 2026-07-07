@@ -150,11 +150,14 @@ def _gxpay(ctx, prep, target, hl, k, final, delay, kind, feat_idx=None):
           "gr": ctx.group_rank(sig),
           "z": ctx.cs_z(sig)}[final].to_numpy()
 
-    # sign convention: positive train IC on day <= 760
+    # sign convention: positive train IC on day <= 760 (scalar; nan on an OOS-only
+    # slice with no train days -> keep sign, don't crash on an empty groupby)
     d = pd.DataFrame({"p": fs, "y": ctx.y, "day": ctx.day_vals}).dropna()
     d = d[d.day <= 760]
-    tic = d.groupby("day").apply(lambda g: g.p.corr(g.y)).mean()
-    if tic < 0:
+    ics = [g["p"].corr(g["y"]) for _, g in d.groupby("day")
+           if len(g) >= 3 and g["p"].std() > 0 and g["y"].std() > 0]
+    tic = float(np.nanmean(ics)) if ics else np.nan
+    if np.isfinite(tic) and tic < 0:
         fs = -fs
     return np.nan_to_num(fs)
 

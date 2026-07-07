@@ -75,21 +75,10 @@ def main() -> None:
 
     gi = df.groupby("instrument_id", sort=False)
 
-    # ---- 2) Temporal features on y (autocorrelation / momentum / vol) ----
-    print("[feat] (2) temporal y features", flush=True)
-    yv = df["y"]
-    tmp = {}
-    for L in (1, 2, 3, 5):
-        tmp[f"y_lag{L}"] = gi["y"].shift(L)
-    ylag1 = gi["y"].shift(1)
-    for W in (5, 10, 20):
-        tmp[f"y_roll{W}"] = ylag1.groupby(df["instrument_id"], sort=False).transform(lambda s: s.rolling(W, min_periods=2).mean())
-        tmp[f"y_vol{W}"] = ylag1.groupby(df["instrument_id"], sort=False).transform(lambda s: s.rolling(W, min_periods=2).std())
-    tmp["y_ewm"] = ylag1.groupby(df["instrument_id"], sort=False).transform(lambda s: s.ewm(span=10, min_periods=2).mean())
-    ytemp = pd.DataFrame(tmp, index=df.index)
-    ytemp_z = cs_zscore(pd.concat([df["day"], ytemp], axis=1), list(tmp.keys())).fillna(0.0)
-    ytemp_z.columns = [f"{c}_z" for c in ytemp_z.columns]
-    feat = pd.concat([feat, ytemp_z.astype("float32")], axis=1)
+    # ---- 2) [REMOVED] autoregressive y-history features (y_lag/roll/vol/ewm).
+    #         These read an instrument's own recently-realised y as a direct input,
+    #         unavailable when the OOS label is withheld; dropped for a leak-safe set.
+    print("[feat] (2) autoregressive y-history features REMOVED (leak-safe)", flush=True)
 
     # ---- 3) Temporal features on strongest x's: lag1, momentum(5), rolling mean(10) ----
     print("[feat] (3) temporal x features (top-30)", flush=True)
@@ -125,27 +114,15 @@ def main() -> None:
     pv_z.columns = [f"{c}_z" for c in pv_z.columns]
     feat = pd.concat([feat, pv_z.astype("float32")], axis=1)
 
-    # ---- 5) Group-aware features (g): group factor = per-(day,g) mean of CS signals ----
-    print("[feat] (5) group features", flush=True)
-    # group momentum: average lagged-y within (day, group) — a leak-free group return
-    glag = pd.DataFrame({"day": df["day"], "g": df["g"], "ylag1": ylag1.fillna(0.0)})
-    gmean = glag.groupby(["day", "g"], sort=False)["ylag1"].transform("mean")
-    feat["grp_ylag_mean"] = cs_zscore(pd.DataFrame({"day": df["day"], "v": gmean.values}), ["v"]).fillna(0.0)["v"].astype("float32")
-    # group mean of the single strongest contemporaneous signal (cross-sectional group tilt)
+    # ---- 5) Group-aware features (g) ----
+    print("[feat] (5) group features (pure-x tilt only; past-y group encodings removed)", flush=True)
+    # [REMOVED] grp_ylag_mean (per-(day,g) mean of lagged y) — autoregressive past-y.
+    # group mean of the single strongest contemporaneous signal (cross-sectional group tilt) — pure x, kept
     best = top_x[0]
     gbest = pd.DataFrame({"day": df["day"], "g": df["g"], "v": xz[f"{best}z"].values})
     gbm = gbest.groupby(["day", "g"], sort=False)["v"].transform("mean")
     feat["grp_xbest_mean"] = gbm.astype("float32").fillna(0.0)
-    # group target-encoding: expanding mean of y per group up to the PREVIOUS day (no leak)
-    enc = df[["day", "g", "y"]].copy()
-    daygrp = enc.groupby(["g", "day"], sort=False)["y"].mean().reset_index()  # mean y per group-day
-    daygrp = daygrp.sort_values(["g", "day"])
-    daygrp["cum"] = daygrp.groupby("g")["y"].cumsum() - daygrp["y"]
-    daygrp["cnt"] = daygrp.groupby("g").cumcount()
-    daygrp["g_te"] = (daygrp["cum"] / daygrp["cnt"].clip(lower=1)).where(daygrp["cnt"] > 0, 0.0)
-    te_map = {(r.g, r.day): r.g_te for r in daygrp.itertuples()}
-    feat["grp_te"] = [te_map.get((g_, d_), 0.0) for g_, d_ in zip(df["g"].values, df["day"].values)]
-    feat["grp_te"] = feat["grp_te"].astype("float32")
+    # [REMOVED] grp_te (expanding-window group target-encoding of y) — past-y feature, dropped.
 
     # ---- 6) Cross-sectional PCA factors (denoise common structure of raw x) ----
     print("[feat] (6) cross-sectional PCA factors", flush=True)

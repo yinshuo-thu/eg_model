@@ -32,11 +32,15 @@ def _rng(ctx):
 
 
 def _train_ic(ctx, s):
-    """mean per-day corr(s, y) over day<=760 (for sign convention)."""
+    """mean per-day corr(s, y) over day<=760 (for sign convention), as a scalar.
+    Returns nan when there are no train days (an OOS-only slice) so the caller keeps
+    the sign instead of crashing on an empty/ambiguous groupby result."""
     p = np.asarray(s.to_numpy("float64") if isinstance(s, pd.Series) else s, "float64")
     d = pd.DataFrame({"p": p, "y": ctx.y, "day": ctx.day_vals}).dropna()
     d = d[d.day <= 760]
-    return d.groupby("day").apply(lambda g: g.p.corr(g.y)).mean()
+    ics = [g["p"].corr(g["y"]) for _, g in d.groupby("day")
+           if len(g) >= 3 and g["p"].std() > 0 and g["y"].std() > 0]
+    return float(np.nanmean(ics)) if ics else np.nan
 
 
 def _load_pca(ctx):

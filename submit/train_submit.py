@@ -6,7 +6,8 @@ out-of-sample deployment.  A tiny random slice of days is held out ONLY as an
 early-stopping monitor for the neural nets; LightGBM uses a fixed round budget.
 
 Produces, in submit/weights/ :
-  feature_artifacts.json  -- top_x list + PCA loadings + 213-feature order
+  feature_artifacts.json  -- top_x list + PCA loadings + 250-feature order
+                             (200 leak-free base + 50 curated supervised factors)
   lgb_dart_seed{0..4}.txt -- tuned DART boosters (seed bag)
   mlp_seed{0..5}.pt       -- multi-task DCN-MLP state_dicts (seed bag)
   xfmr_seed{0..7}.pt      -- v3-lineage temporal Transformer state_dicts (seed bag)
@@ -33,7 +34,9 @@ from features_core import compute_features
 from models import MTMLP, EGCSTransformer
 
 ROOT = Path("/root/autodl-tmp/eg_model")
-RAW = ROOT / "artifacts" / "panel_raw.parquet"
+# training raw panel: parquet by default, but EG_RAW may point at a CSV in the
+# data.csv schema (day, instrument_id, x_0..x_85, prc1..prc5, vol0, g, y).
+RAW = os.environ.get("EG_RAW", str(ROOT / "artifacts" / "panel_raw.parquet"))
 WDIR = HERE / "weights"
 WDIR.mkdir(parents=True, exist_ok=True)
 DEV = "cuda" if torch.cuda.is_available() else "cpu"
@@ -66,6 +69,9 @@ MIN_DAY = int(os.environ.get("EG_MIN_DAY", "0"))   # >0 -> smoke-test on a day s
 MON_FRAC = 0.035                          # random days held out only for early-stop
 MON_SEED = 12345
 FAMILIES = ["lightgbm", "mlp", "transformer"]
+# EG_REUSE=1 -> reuse any already-saved seed weights (skip retraining them) and only
+# train the missing ones. Makes the retrain resumable after an interruption.
+REUSE = bool(int(os.environ.get("EG_REUSE", "0")))
 ALPHA_GRID = np.round(np.arange(0.0, 0.86, 0.05), 2)
 PLATEAU = 0.997
 RESEARCH_ALPHA = 0.35                      # OOS-validated group-neutralisation strength
@@ -107,12 +113,17 @@ def train_lightgbm(X, yxs, labelled):
     preds = np.zeros(len(X), dtype="float64")
     for sd in LGB_SEEDS:
         t0 = time.time()
+        f = WDIR / f"lgb_dart_seed{sd}.txt"
+        if REUSE and f.exists():
+            preds += lgb.Booster(model_file=str(f)).predict(X)
+            print(f"   seed {sd} REUSED ({f.name})", flush=True)
+            continue
         # NB: data_random_seed is a Dataset-construction param and cannot vary
         # across train() calls that share one Dataset; seed diversity comes from
         # seed / bagging_seed / feature_fraction_seed (as in run_classic.py).
         p = dict(LGB_DART, seed=sd, bagging_seed=sd + 7, feature_fraction_seed=sd + 17)
         m = lgb.train(p, dtr, num_boost_round=LGB_ROUNDS)
-        m.save_model(str(WDIR / f"lgb_dart_seed{sd}.txt"))
+        m.save_model(str(f))
         preds += m.predict(X)
         print(f"   seed {sd} done in {time.time()-t0:.0f}s", flush=True)
     return preds / len(LGB_SEEDS)
@@ -203,6 +214,15 @@ def train_transformer(feat, fcols, mon_days):
     pred_acc = None
     for sd in XFMR_SEEDS:
         t0 = time.time()
+        f = WDIR / f"xfmr_seed{sd}.pt"
+        if REUSE and f.exists():
+            net = EGCSTransformer(Fn, K=K, d=XF_DMODEL, nl=XF_NL, ncs=XF_NCS,
+                                  nh=XF_NH, p=XF_DROP, sd=XF_SD).to(DEV)
+            net.load_state_dict(torch.load(f, map_location=DEV)); net.eval()
+            arr = np.stack(predict_days(net, list(day_idx)), 1)
+            pred_acc = arr if pred_acc is None else pred_acc + arr
+            print(f"   seed {sd} REUSED ({f.name})", flush=True)
+            continue
         torch.manual_seed(sd); np.random.seed(sd)
         net = EGCSTransformer(Fn, K=K, d=XF_DMODEL, nl=XF_NL, ncs=XF_NCS,
                               nh=XF_NH, p=XF_DROP, sd=XF_SD).to(DEV)
@@ -321,24 +341,32 @@ def fit_ensemble_config(cfg_df):
 def main():
     t0 = time.time()
     print(f"[train] device={DEV}", flush=True)
-    raw = pd.read_parquet(RAW)
+    raw = pd.read_csv(RAW) if str(RAW).endswith(".csv") else pd.read_parquet(RAW)
     if MIN_DAY > 0:
         raw = raw[raw["day"] >= MIN_DAY].copy()
         print(f"[train] SMOKE slice: days >= {MIN_DAY}", flush=True)
     print(f"[train] raw {raw.shape}  days {raw['day'].min()}-{raw['day'].max()}", flush=True)
 
-    print("[train] building/loading 263 features (213 base + 50 genalpha factors, fit mode)", flush=True)
+    print("[train] building/loading 250 features (200 leak-free base + 50 curated "
+          "supervised factors, fit mode)", flush=True)
     tf = time.time()
     import genalpha
-    CACHE = ROOT / "artifacts" / "genalpha_263.parquet"
-    ACACHE = ROOT / "artifacts" / "genalpha_artifacts.json"
+    # NB: a NEW cache path (the legacy genalpha_263.parquet still holds the dropped
+    # 13 autoregressive y-features, so it must NOT be reused). First run recomputes
+    # fresh with the leak-safe pipeline and caches the 250-feature matrix.
+    CACHE = ROOT / "artifacts" / "genalpha_250.parquet"
+    ACACHE = ROOT / "artifacts" / "genalpha_artifacts_250.json"
     if MIN_DAY == 0 and CACHE.exists() and ACACHE.exists():
         feat = pd.read_parquet(CACHE)
         artifacts = json.load(open(ACACHE))
-        fcols = artifacts["feature_list_263"]
-        print(f"[train] loaded cached 263 features {feat.shape} ({len(fcols)} cols)", flush=True)
+        fcols = artifacts.get("feature_list_full", artifacts.get("feature_list_263"))
+        print(f"[train] loaded cached 250 features {feat.shape} ({len(fcols)} cols)", flush=True)
     else:
-        feat, artifacts, fcols = genalpha.compute_263(raw, artifacts=None)
+        feat, artifacts, fcols = genalpha.compute(raw, artifacts=None)
+        if MIN_DAY == 0:
+            feat.to_parquet(CACHE, index=False)
+            json.dump(artifacts, open(ACACHE, "w"))
+            print(f"[train] cached 250 features -> {CACHE.name} ({len(fcols)} cols)", flush=True)
     json.dump(artifacts, open(WDIR / "feature_artifacts.json", "w"))
     print(f"[train] features {feat.shape}  ({len(fcols)} cols) in {time.time()-tf:.0f}s", flush=True)
 
@@ -391,6 +419,15 @@ def train_mlp(X, yxs, yraw, day, train_mask, mon_mask):
 
     for sd in MLP_SEEDS:
         t0 = time.time()
+        f = WDIR / f"mlp_seed{sd}.pt"
+        if REUSE and f.exists():
+            net = MTMLP(d).to(DEV); net.load_state_dict(torch.load(f, map_location=DEV)); net.eval()
+            with torch.no_grad():
+                pred = np.concatenate([net(Xg[j:j + 200000])[0].cpu().numpy()
+                                       for j in range(0, len(X), 200000)])
+            all_preds += pred
+            print(f"   seed {sd} REUSED ({f.name})", flush=True)
+            continue
         torch.manual_seed(sd); np.random.seed(sd)
         net = MTMLP(d).to(DEV)
         opt = torch.optim.AdamW(net.parameters(), lr=8e-4, weight_decay=1e-4)
