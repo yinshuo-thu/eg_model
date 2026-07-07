@@ -48,7 +48,7 @@ HERE = Path(__file__).resolve().parent
 import sys
 sys.path.insert(0, str(HERE))
 import genalpha
-from models import MTMLP, EGTransformer
+from models import MTMLP, EGCSTransformer
 
 WDIR = HERE / "weights"
 # device: env EG_DEVICE ('cpu'/'cuda') overrides; else auto. Lets an evaluator
@@ -71,6 +71,8 @@ class Predictor:
         self.fcols = self.artifacts.get("feature_list_263", self.artifacts["feature_list"])
         self.Fn = len(self.fcols)
         self.K = int(self.cfg.get("K", 32))
+        # v2 Transformer arch (must match training to load the weights)
+        self.xcfg = self.cfg.get("xfmr", {"d": 176, "nl": 4, "ncs": 2, "nh": 4})
         self.families = self.cfg["families"]
         self.weights = np.asarray(self.cfg["weights"], dtype="float64")
         self.alpha = float(self.cfg["neut_alpha"])
@@ -85,10 +87,12 @@ class Predictor:
             net.load_state_dict(torch.load(p, map_location=device))
             net.eval()
             self.mlp.append(net)
-        # Transformer seed bag
+        # Transformer seed bag (v2 temporal + cross-sectional)
         self.xfmr = []
         for p in sorted(self.wdir.glob("xfmr_seed*.pt")):
-            net = EGTransformer(self.Fn, K=self.K).to(device)
+            net = EGCSTransformer(self.Fn, K=self.K, d=int(self.xcfg["d"]),
+                                  nl=int(self.xcfg["nl"]), ncs=int(self.xcfg["ncs"]),
+                                  nh=int(self.xcfg["nh"])).to(device)
             net.load_state_dict(torch.load(p, map_location=device))
             net.eval()
             self.xfmr.append(net)
@@ -96,6 +100,15 @@ class Predictor:
             raise FileNotFoundError(
                 f"missing model weights in {self.wdir} "
                 f"(lgb={len(self.lgb)} mlp={len(self.mlp)} xfmr={len(self.xfmr)})")
+
+    def _to_device(self, dev):
+        """Move the neural nets (MLP + Transformer) to a device — used for the
+        automatic GPU->CPU fallback if CUDA inference fails / OOMs."""
+        self.device = dev
+        for net in self.mlp:
+            net.to(dev)
+        for net in self.xfmr:
+            net.to(dev)
 
     # ------------------------------------------------------------------ base models
     def _pred_lgb(self, X):
@@ -110,9 +123,11 @@ class Predictor:
                                        for i in range(0, len(X), 200000)])
         return acc / len(self.mlp)
 
-    def _pred_xfmr(self, feat, target_days):
-        """Transformer preds for (instrument, day) with day in target_days and a
-        full K-day lookback.  Returns dict {(instrument_id, day): pred}."""
+    def _pred_xfmr(self, feat, target_days, verbose=False):
+        """v2 cross-sectional Transformer preds for (instrument, day) with day in
+        target_days and a full K-day lookback. Runs PER-DAY — the CSBlocks attend
+        across the day's cross-section — with a key-padding mask for absent
+        instruments. Returns dict {(instrument_id, day): pred}, present rows only."""
         df = feat.sort_values(["instrument_id", "day"]).reset_index(drop=True)
         insts = np.sort(df["instrument_id"].unique())
         days = np.sort(df["day"].unique())
@@ -120,45 +135,66 @@ class Predictor:
         didx = {v: k for k, v in enumerate(days)}
         NI, ND = len(insts), len(days)
         panel = np.zeros((NI, ND, self.Fn), dtype="float32")
+        present = np.zeros((NI, ND), dtype=bool)
         ii = df["instrument_id"].map(iidx).to_numpy()
         dd = df["day"].map(didx).to_numpy()
         panel[ii, dd] = df[self.fcols].to_numpy("float32")
+        present[ii, dd] = True
         P = torch.from_numpy(panel).to(self.device)
+        present_t = torch.from_numpy(present).to(self.device)
         offs = torch.arange(-(self.K - 1), 1, device=self.device)
 
-        tgt_didx = [didx[d] for d in target_days if d in didx and didx[d] >= self.K - 1]
-        if not tgt_didx:
+        tgt = [didx[d] for d in target_days if d in didx and didx[d] >= self.K - 1]
+        if not tgt:
             return {}
-        samp = np.array([(i, di) for di in tgt_didx for i in range(NI)], dtype=np.int64)
-        samp_t = torch.from_numpy(samp).to(self.device)
+        DPS = 4
 
-        def gather(idx_t):
-            iis = samp_t[idx_t, 0]; dds = samp_t[idx_t, 1]
-            win_d = dds.unsqueeze(1) + offs.unsqueeze(0)
-            return P[iis.unsqueeze(1), win_d]
+        def day_batch(dds):
+            win = (dds.unsqueeze(1) + offs.unsqueeze(0)).reshape(-1)
+            x = P[:, win, :].reshape(NI, len(dds), self.K, self.Fn).permute(1, 0, 2, 3)
+            kpm = (~present_t[:, dds]).transpose(0, 1)
+            return x, kpm
 
-        acc = np.zeros(len(samp), dtype="float64")
+        predsum = np.zeros((NI, len(tgt)), dtype="float64")
+        n_batches = (len(tgt) + DPS - 1) // DPS
+        total = len(self.xfmr) * n_batches
+        done = 0
+        step = max(1, total // 10)
         for net in self.xfmr:
-            pred = np.empty(len(samp), "float32")
             with torch.no_grad():
-                for i in range(0, len(samp), 16384):
-                    b = torch.arange(i, min(i + 16384, len(samp)), device=self.device)
-                    pred[i:i + 16384] = net(gather(b))[0].float().cpu().numpy()
-            acc += pred
-        acc /= len(self.xfmr)
-        inst_of = insts[samp[:, 0]]
-        day_of = days[samp[:, 1]]
-        return {(int(iv), int(dv)): float(pv) for iv, dv, pv in zip(inst_of, day_of, acc)}
+                col = 0
+                for i in range(0, len(tgt), DPS):
+                    dds = torch.as_tensor(tgt[i:i + DPS], device=self.device)
+                    m = net(*day_batch(dds))[0].float().cpu().numpy()        # (b, NI)
+                    for j in range(m.shape[0]):
+                        predsum[:, col] += m[j]; col += 1
+                    done += 1
+                    if verbose and (done % step == 0 or done == total):
+                        print(f"[predict]   transformer {done}/{total} batches "
+                              f"({100*done//total}%)", flush=True)
+        predsum /= len(self.xfmr)
+
+        out = {}
+        for c, di in enumerate(tgt):
+            dval = int(days[di]); pr = predsum[:, c]; pres = present[:, di]
+            for k in range(NI):
+                if pres[k]:
+                    out[(int(insts[k]), dval)] = float(pr[k])
+        return out
 
     # ------------------------------------------------------------------ public
     def predict(self, panel_df: pd.DataFrame, predict_days=None,
-                model: str = "ensemble") -> pd.DataFrame:
+                model: str = "ensemble", verbose: bool = True) -> pd.DataFrame:
         """model: 'ensemble' (default, the diversity-weighted group-neutralised
         blend of all families) or a single sub-model 'lightgbm' / 'mlp' /
-        'transformer' (per-day z-scored). Any other value raises."""
+        'transformer' (per-day z-scored). Any other value raises.
+        verbose: print progress. On a CUDA failure/OOM the neural nets fall back
+        to CPU automatically (so a GPU is never required)."""
         allowed = {"ensemble"} | set(self.families)
         if model not in allowed:
             raise ValueError(f"model={model!r}; choose one of {sorted(allowed)}")
+        if verbose:
+            print("[predict] building 263 features from raw (this is the slow step) ...", flush=True)
         feat, _, _ = genalpha.compute_263(panel_df, artifacts=self.artifacts)
 
         # ---- decide which days to score ----
@@ -175,12 +211,35 @@ class Predictor:
         tmask = feat["day"].isin(target_set).to_numpy()
         sub = feat.loc[tmask, ["day", "instrument_id", "g"]].reset_index(drop=True).copy()
         Xt = feat.loc[tmask, self.fcols].to_numpy("float32")
+        if verbose:
+            print(f"[predict] scoring {len(target_days)} day(s), {int(tmask.sum()):,} rows "
+                  f"on device={self.device}", flush=True)
 
-        # ---- base predictions on the target rows ----
-        base = {}
-        base["lightgbm"] = self._pred_lgb(Xt)
-        base["mlp"] = self._pred_mlp(Xt)
-        xf = self._pred_xfmr(feat, target_days)
+        # ---- base predictions on the target rows (auto GPU->CPU fallback) ----
+        def _base_preds():
+            b = {}
+            if verbose: print("[predict] scoring LightGBM ...", flush=True)
+            b["lightgbm"] = self._pred_lgb(Xt)
+            if verbose: print("[predict] scoring MLP ...", flush=True)
+            b["mlp"] = self._pred_mlp(Xt)
+            if verbose: print("[predict] scoring Transformer (per-day cross-sectional) ...", flush=True)
+            xf_ = self._pred_xfmr(feat, target_days, verbose=verbose)
+            return b, xf_
+        try:
+            base, xf = _base_preds()
+        except RuntimeError as e:                    # torch.cuda.OutOfMemoryError subclasses this
+            msg = str(e).lower()
+            if self.device != "cpu" and ("cuda" in msg or "out of memory" in msg):
+                print(f"[predict] GPU inference failed ({type(e).__name__}) -> retrying on CPU",
+                      flush=True)
+                try:
+                    torch.cuda.empty_cache()
+                except Exception:
+                    pass
+                self._to_device("cpu")
+                base, xf = _base_preds()
+            else:
+                raise
         sub["_key"] = list(zip(sub["instrument_id"].astype(int), sub["day"].astype(int)))
         base["transformer"] = np.array([xf.get(k, np.nan) for k in sub["_key"]], dtype="float64")
 
@@ -211,6 +270,8 @@ class Predictor:
 
         out = sub[["day", "instrument_id", "y_hat"]].copy()
         out = out.sort_values(["day", "instrument_id"]).reset_index(drop=True)
+        if verbose:
+            print(f"[predict] done — {len(out):,} rows, model={model}", flush=True)
         return out
 
 
@@ -219,16 +280,18 @@ _PREDICTOR: Predictor | None = None
 
 def predict(panel_df: pd.DataFrame, predict_days=None,
             weights_dir: str | Path = WDIR, model: str = "ensemble",
-            device: str | None = None) -> pd.DataFrame:
+            device: str | None = None, verbose: bool = True) -> pd.DataFrame:
     """Module-level convenience wrapper (caches the loaded models).
     model: 'ensemble' (default) | 'lightgbm' | 'mlp' | 'transformer'.
-    device: None -> auto (env EG_DEVICE or cuda-if-available); or 'cpu' / 'cuda'."""
+    device: None -> auto (env EG_DEVICE or cuda-if-available); or 'cpu' / 'cuda'
+            (a GPU is never required — CUDA failures fall back to CPU automatically).
+    verbose: print progress (default True)."""
     global _PREDICTOR
     dev = device or DEV
     if (_PREDICTOR is None or Path(_PREDICTOR.wdir) != Path(weights_dir)
             or _PREDICTOR.device != dev):
         _PREDICTOR = Predictor(weights_dir, device=dev)
-    return _PREDICTOR.predict(panel_df, predict_days=predict_days, model=model)
+    return _PREDICTOR.predict(panel_df, predict_days=predict_days, model=model, verbose=verbose)
 
 
 def _main():
@@ -241,14 +304,15 @@ def _main():
                     choices=["ensemble", "lightgbm", "mlp", "transformer"],
                     help="which model's signal to output (default: ensemble)")
     ap.add_argument("--device", default=None, choices=["cpu", "cuda"],
-                    help="force compute device (default: auto / env EG_DEVICE)")
+                    help="force compute device (default: auto; CUDA failures fall back to CPU)")
+    ap.add_argument("--quiet", action="store_true", help="suppress progress output")
     args = ap.parse_args()
 
     inp = Path(args.input)
     df = pd.read_csv(inp) if inp.suffix == ".csv" else pd.read_parquet(inp)
     days = [int(d) for d in args.days.split(",")] if args.days else None
     out = predict(df, predict_days=days, weights_dir=args.weights,
-                  model=args.model, device=args.device)
+                  model=args.model, device=args.device, verbose=not args.quiet)
 
     outp = Path(args.output)
     if outp.suffix == ".csv":

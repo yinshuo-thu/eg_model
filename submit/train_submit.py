@@ -16,7 +16,7 @@ Produces, in submit/weights/ :
 Run:  python submit/train_submit.py
 """
 from __future__ import annotations
-import json, time, os
+import json, time, os, math
 from pathlib import Path
 
 import numpy as np
@@ -30,7 +30,7 @@ HERE = Path(__file__).resolve().parent
 import sys
 sys.path.insert(0, str(HERE))
 from features_core import compute_features
-from models import MTMLP, EGTransformer
+from models import MTMLP, EGCSTransformer
 
 ROOT = Path("/root/autodl-tmp/eg_model")
 RAW = ROOT / "artifacts" / "panel_raw.parquet"
@@ -48,7 +48,20 @@ LGB_SEEDS = _seeds("EG_LGB_SEEDS", (0, 1, 2, 3, 4))
 MLP_SEEDS = _seeds("EG_MLP_SEEDS", (0, 1, 2, 3, 4, 5))
 XFMR_SEEDS = tuple(range(int(os.environ.get("NSEED", "8"))))
 MLP_EPOCHS = int(os.environ.get("EG_MLP_EPOCHS", "30"))
-XFMR_EPOCHS = int(os.environ.get("EG_XFMR_EPOCHS", "14"))
+XFMR_EPOCHS = int(os.environ.get("EG_XFMR_EPOCHS", "28"))
+# --- v2 temporal+cross-sectional Transformer config (Transformer/v2 scenario-opt) ---
+XF_DMODEL = int(os.environ.get("EG_XF_DMODEL", "176"))   # scale-up width (128->176)
+XF_NL     = int(os.environ.get("EG_XF_NL", "4"))         # temporal depth (3->4)
+XF_NCS    = int(os.environ.get("EG_XF_NCS", "2"))        # cross-sectional blocks
+XF_NH     = int(os.environ.get("EG_XF_NH", "4"))
+XF_DROP   = float(os.environ.get("EG_XF_DROP", "0.15"))
+XF_SD     = float(os.environ.get("EG_XF_SD", "0.15"))    # stochastic depth (Huang+2016)
+XF_LR     = float(os.environ.get("EG_XF_LR", "7e-4"))
+XF_WD     = float(os.environ.get("EG_XF_WD", "1e-4"))
+XF_WARMUP = float(os.environ.get("EG_XF_WARMUP", "0.05"))
+XF_PATIENCE = int(os.environ.get("EG_XF_PATIENCE", "6"))
+XF_DPS    = int(os.environ.get("EG_XF_DPS", "4"))        # days per training step
+XF_RDROP  = float(os.environ.get("EG_XF_RDROP", "0.5"))  # R-Drop consistency (Liang+2021)
 MIN_DAY = int(os.environ.get("EG_MIN_DAY", "0"))   # >0 -> smoke-test on a day slice
 MON_FRAC = 0.035                          # random days held out only for early-stop
 MON_SEED = 12345
@@ -133,8 +146,26 @@ def build_panel(feat, fcols):
     return panel, yxs, yraw, insts, days
 
 
+def daily_ic_days(pred_by_day, yraw_by_day) -> float:
+    """Mean daily cross-sectional IC given lists of per-day (pred, yraw) arrays."""
+    ics = []
+    for p, y in zip(pred_by_day, yraw_by_day):
+        m = ~np.isnan(y)
+        if m.sum() < 5:
+            continue
+        pc, yc = p[m], y[m]
+        if pc.std() < 1e-9 or yc.std() < 1e-9:
+            continue
+        ics.append(np.corrcoef(pc, yc)[0, 1])
+    return float(np.mean(ics)) if ics else float("nan")
+
+
 def train_transformer(feat, fcols, mon_days):
-    print(f"[xfmr] training temporal Transformer ({len(XFMR_SEEDS)} seeds, K={K})", flush=True)
+    """v2 temporal + cross-sectional Transformer: per-(instrument, day) temporal
+    encoder + CSBlocks attending across instruments, trained day-batched with
+    R-Drop consistency. Monitor days give the early-stop signal; 8 seeds averaged."""
+    print(f"[xfmr] training v2 temporal+CS Transformer ({len(XFMR_SEEDS)} seeds, K={K}, "
+          f"d={XF_DMODEL} nl={XF_NL} ncs={XF_NCS} sd={XF_SD} rdrop={XF_RDROP} ep={XFMR_EPOCHS})", flush=True)
     panel, yxs, yraw, insts, days = build_panel(feat, fcols)
     NI, ND, Fn = panel.shape
     print(f"[xfmr] panel {panel.shape} ({panel.nbytes/1e9:.2f} GB)", flush=True)
@@ -142,77 +173,93 @@ def train_transformer(feat, fcols, mon_days):
     Yx = torch.from_numpy(np.nan_to_num(yxs)).to(DEV)
     sign = torch.from_numpy((np.nan_to_num(yraw) > 0).astype("float32")).to(DEV)
     mag = torch.from_numpy(np.abs(np.nan_to_num(yxs))).to(DEV)
+    present = torch.from_numpy((~np.isnan(yxs)).astype(bool)).to(DEV)
 
-    di = np.arange(ND)
-    valid_day = di >= (K - 1)
-    is_mon = np.isin(days, list(mon_days))
-    samp = np.array([(ii, dd) for dd in di[valid_day] for ii in range(NI)], dtype=np.int64)
-    samp_t = torch.from_numpy(samp).to(DEV)
+    day_idx = np.arange(K - 1, ND)
+    is_mon = np.isin(days[day_idx], list(mon_days))
+    has_lab = np.array([np.isfinite(yxs[:, dd]).any() for dd in day_idx])
+    tr_days = day_idx[(~is_mon) & has_lab]
+    va_days = day_idx[is_mon & has_lab]
+    print(f"[xfmr] days: train {len(tr_days)} monitor {len(va_days)} total {len(day_idx)}", flush=True)
     offs = torch.arange(-(K - 1), 1, device=DEV)
-    samp_day = days[samp[:, 1]]
-    samp_yraw = yraw[samp[:, 0], samp[:, 1]]
-    samp_yxs = yxs[samp[:, 0], samp[:, 1]]
-    samp_ismon = is_mon[samp[:, 1]]
 
-    labelled = ~np.isnan(samp_yxs)
-    tr_idx = np.where(labelled & ~samp_ismon)[0]
-    mo_idx = np.where(labelled & samp_ismon)[0]
-    print(f"[xfmr] samples: train {len(tr_idx):,} monitor {len(mo_idx):,} total {len(samp):,}", flush=True)
+    def day_batch(dds):                                   # dds: 1-D tensor of day indices
+        win = (dds.unsqueeze(1) + offs.unsqueeze(0)).reshape(-1)
+        x = P[:, win, :].reshape(NI, len(dds), K, Fn).permute(1, 0, 2, 3)   # (B, NI, K, Fn)
+        kpm = (~present[:, dds]).transpose(0, 1)                             # (B, NI) True=absent
+        return x, kpm
 
-    def gather(idx_t):
-        ii = samp_t[idx_t, 0]; dd = samp_t[idx_t, 1]
-        win_d = dd.unsqueeze(1) + offs.unsqueeze(0)
-        x = P[ii.unsqueeze(1), win_d]
-        return x, Yx[ii, dd], sign[ii, dd], mag[ii, dd]
+    def predict_days(net, dlist):
+        net.eval(); preds = []
+        with torch.no_grad():
+            for i in range(0, len(dlist), XF_DPS):
+                dds = torch.as_tensor(dlist[i:i + XF_DPS], device=DEV)
+                x, kpm = day_batch(dds)
+                m = net(x, kpm)[0].float().cpu().numpy()                     # (b, NI)
+                preds.extend(m[j] for j in range(len(dds)))
+        return preds
 
-    # accumulate per-seed predictions over ALL samples, average at the end
-    pred_sum = np.zeros(len(samp), dtype="float64")
-    tr_t = torch.from_numpy(tr_idx).to(DEV)
+    va_yraw = [yraw[:, dd] for dd in va_days]
+    pred_acc = None
     for sd in XFMR_SEEDS:
         t0 = time.time()
         torch.manual_seed(sd); np.random.seed(sd)
-        net = EGTransformer(Fn, K=K).to(DEV)
-        opt = torch.optim.AdamW(net.parameters(), lr=7e-4, weight_decay=1e-4, betas=(0.9, 0.95))
+        net = EGCSTransformer(Fn, K=K, d=XF_DMODEL, nl=XF_NL, ncs=XF_NCS,
+                              nh=XF_NH, p=XF_DROP, sd=XF_SD).to(DEV)
+        opt = torch.optim.AdamW(net.parameters(), lr=XF_LR, weight_decay=XF_WD, betas=(0.9, 0.95))
         scaler = torch.amp.GradScaler("cuda", enabled=DEV == "cuda")
-        bs = 4096; best, best_state, bad = -9.0, None, 0
+        steps_per_ep = math.ceil(len(tr_days) / XF_DPS)
+        total_steps = steps_per_ep * XFMR_EPOCHS
+        warm = max(1, int(XF_WARMUP * total_steps))
+
+        def lr_at(s):
+            if s < warm:
+                return XF_LR * s / warm
+            prog = (s - warm) / max(1, total_steps - warm)
+            return 0.5 * XF_LR * (1 + math.cos(math.pi * min(1.0, prog)))
+
+        gstep = 0; best, best_state, bad = -9.0, None, 0
         for ep in range(XFMR_EPOCHS):
-            net.train(); perm = tr_t[torch.randperm(len(tr_t), device=DEV)]
-            for i in range(0, len(perm), bs):
-                b = perm[i:i + bs]
-                x, ym, ys, yg = gather(b)
+            net.train(); order = np.random.permutation(tr_days)
+            for i in range(0, len(order), XF_DPS):
+                for pg in opt.param_groups:
+                    pg["lr"] = lr_at(gstep)
+                dds = torch.as_tensor(order[i:i + XF_DPS], device=DEV)
+                x, kpm = day_batch(dds)
+                pmask = present[:, dds].transpose(0, 1)
+                ym = Yx[:, dds].transpose(0, 1); ys = sign[:, dds].transpose(0, 1); yg = mag[:, dds].transpose(0, 1)
                 opt.zero_grad()
                 with torch.amp.autocast("cuda", enabled=DEV == "cuda"):
-                    m, s, g = net(x)
-                    loss = (F.smooth_l1_loss(m, ym) + 0.3 * F.binary_cross_entropy_with_logits(s, ys)
-                            + 0.3 * F.mse_loss(g, yg))
+                    def _sup(mm, ss, gg):
+                        return (F.smooth_l1_loss(mm[pmask], ym[pmask])
+                                + 0.3 * F.binary_cross_entropy_with_logits(ss[pmask], ys[pmask])
+                                + 0.3 * F.mse_loss(gg[pmask], yg[pmask]))
+                    m, s, g = net(x, kpm)
+                    loss = _sup(m, s, g)
+                    if XF_RDROP > 0:                       # R-Drop: 2nd dropout pass + consistency
+                        m2, s2, g2 = net(x, kpm)
+                        loss = 0.5 * (loss + _sup(m2, s2, g2)) + XF_RDROP * F.mse_loss(m[pmask], m2[pmask])
                 scaler.scale(loss).backward(); scaler.unscale_(opt)
                 nn.utils.clip_grad_norm_(net.parameters(), 2.0); scaler.step(opt); scaler.update()
-            net.eval(); pv = np.empty(len(mo_idx), "float32")
-            with torch.no_grad():
-                for i in range(0, len(mo_idx), 16384):
-                    b = torch.from_numpy(mo_idx[i:i + 16384]).to(DEV)
-                    pv[i:i + 16384] = net(gather(b)[0])[0].float().cpu().numpy()
-            ic = daily_ic_np(pv, samp_yraw[mo_idx], samp_day[mo_idx])
+                gstep += 1
+            ic = daily_ic_days(predict_days(net, va_days), va_yraw)
             if ic > best + 1e-5:
                 best, bad = ic, 0
                 best_state = {k: v.detach().clone() for k, v in net.state_dict().items()}
             else:
                 bad += 1
-                if bad >= 4:
+                if bad >= XF_PATIENCE:
                     break
         net.load_state_dict(best_state); net.eval()
         torch.save({k: v.cpu() for k, v in best_state.items()}, WDIR / f"xfmr_seed{sd}.pt")
-        pred = np.empty(len(samp), "float32")
-        with torch.no_grad():
-            for i in range(0, len(samp), 16384):
-                b = torch.arange(i, min(i + 16384, len(samp)), device=DEV)
-                pred[i:i + 16384] = net(gather(b)[0])[0].float().cpu().numpy()
-        pred_sum += pred
+        arr = np.stack(predict_days(net, list(day_idx)), 1)                  # (NI, len(day_idx))
+        pred_acc = arr if pred_acc is None else pred_acc + arr
         print(f"   seed {sd}: monitor IC {best:.5f}  ({time.time()-t0:.0f}s)", flush=True)
 
-    pred_avg = pred_sum / len(XFMR_SEEDS)
-    # scatter back to (instrument_id, day) so it aligns with feat rows
-    out = pd.DataFrame({"instrument_id": insts[samp[:, 0]], "day": samp_day, "xfmr": pred_avg})
+    pred_mat = pred_acc / len(XFMR_SEEDS)                                    # (NI, len(day_idx))
+    out = pd.DataFrame({"instrument_id": np.tile(insts, len(day_idx)),
+                        "day": np.repeat(days[day_idx], NI),
+                        "xfmr": pred_mat.reshape(-1, order="F")})
     return out
 
 
@@ -319,6 +366,7 @@ def main():
     cfg_df = cfg_df.merge(xfmr_df, on=["instrument_id", "day"], how="left").rename(
         columns={"xfmr": "transformer"})
     cfg = fit_ensemble_config(cfg_df)
+    cfg["xfmr"] = {"d": XF_DMODEL, "nl": XF_NL, "ncs": XF_NCS, "nh": XF_NH, "sd": XF_SD}
     json.dump(cfg, open(WDIR / "ensemble_config.json", "w"), indent=2)
 
     print(f"\n[train] DONE in {(time.time()-t0)/60:.1f} min", flush=True)

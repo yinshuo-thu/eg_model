@@ -3,8 +3,12 @@
 A self-contained, **causal** alpha model for the Engineering-Gates take-home. It
 regenerates **263 leak-free features** (213 base + 50 curated `genalpha` factors)
 from the raw panel, runs a diversity-weighted **ensemble** of LightGBM + a
-multi-task MLP + a temporal Transformer, and emits the daily cross-sectional
-signal `y_hat`.
+multi-task MLP + a **temporal + cross-sectional Transformer** (v2), and emits the
+daily cross-sectional signal `y_hat`.
+
+**No GPU required.** Inference uses a GPU if one is available and **falls back to
+CPU automatically** on any CUDA error/OOM (or force it with `--device cpu`).
+Progress is printed as it runs.
 
 **The shipped weights are trained on ALL labelled days (1–1259)** — the whole
 `data.csv` — because the real score is out-of-sample. Nothing here is held out;
@@ -52,6 +56,13 @@ z-scored; level/scale are irrelevant).
 
 ## Quickstart
 
+### Easiest — the wrapper
+```bash
+# ./run_predict.sh INPUT OUTPUT [MODEL] [DEVICE]
+./submit/run_predict.sh oos_panel.parquet preds.parquet            # ensemble, auto device
+./submit/run_predict.sh oos_panel.csv preds.csv ensemble cpu       # force CPU
+```
+
 ### CLI
 ```bash
 # default = ensemble
@@ -87,7 +98,7 @@ yhat = predict(df, model="lightgbm")             # or a sub-model
 | `ensemble` *(default)* | diversity-weighted, group-neutralised blend of all three families — **the recommended model** |
 | `lightgbm` | LightGBM-DART seed-bag only (per-day z-scored) |
 | `mlp` | multi-task DCN-MLP seed-bag only |
-| `transformer` | temporal Transformer seed-bag only |
+| `transformer` | temporal + cross-sectional Transformer (v2) seed-bag only |
 
 Omit `--model` to get the ensemble.
 
@@ -104,15 +115,36 @@ Omit `--model` to get the ensemble.
      payoff timing, payoff-weighted pair quadratics, IC-weighted composites,
      supervised ridge/tilt, group-payoff, feature-family composites, etc. — every
      one recomputed from raw with **supervised state frozen on unlabelled days**.
-2. Each family's frozen models score the rows; each family is **per-day
-   z-scored**, blended with **diversity (inverse-correlation) weights**, then
-   **group-`g` neutralised** — parameters frozen from the in-sample fit.
+2. Three frozen model families score the rows:
+   - **LightGBM-DART** seed-bag (robust L1 gradient boosting),
+   - **multi-task DCN-MLP** seed-bag (cross-network + sign/magnitude heads),
+   - **v2 temporal + cross-sectional Transformer** seed-bag — a per-instrument
+     K=32-day temporal encoder (ALiBi time-bias attention, SwiGLU, stochastic
+     depth) followed by **cross-sectional attention across instruments within a
+     day**, scaled up (d=176, depth 4) and trained with R-Drop consistency
+     (Liang et al. 2021). Inference runs **per day** over the day's cross-section.
+3. Each family is **per-day z-scored**, blended with **diversity
+   (inverse-correlation) weights**, then **group-`g` neutralised** — all
+   parameters frozen from the in-sample fit.
 
 All learned parameters (model weights, blend weights, neutralisation α, PCA
 loadings, supervised factor states) are **fixed at training time**; no OOS label
-is ever used.
+is ever used. On any CUDA failure the neural nets fall back to CPU automatically.
 
 ---
+
+## Performance
+
+The honest OOS estimate is the **research ensemble** on the sealed test split
+(days 881–1259, never used for selection): **IC ≈ 0.062 / IR ≈ 1.06–1.14**
+(diversity-weighted; group-neutralised variant trades a hair of IC for IR),
+vs the provided `y_hat0` baseline (IC 0.056 / IR 1.1) — see the report. The v2
+temporal+cross-sectional Transformer lifts the single-model IC 0.0602→0.0612 and
+the ensemble a touch further.
+
+The shipped weights are trained on **all** labelled days, so an in-sample
+wiring-check (days 1200–1259, which the model *did* train on) scores IC ≈ 0.10 —
+optimistic by construction; treat 0.062 as the OOS expectation, not 0.10.
 
 ## Reproduce the training
 ```bash
@@ -127,7 +159,8 @@ MLP / Transformer seed bags, fits the ensemble config, and writes everything to
 ## Files
 ```
 submit/
-  predict.py            # predict(df, model=...) -> [day, instrument_id, y_hat]  (+ CLI)
+  run_predict.sh        # convenience wrapper: ./run_predict.sh IN OUT [MODEL] [DEVICE]
+  predict.py            # predict(df, model=..., device=...) -> [day, instrument_id, y_hat] (+ CLI)
   train_submit.py       # retrain all models on all labelled days
   features_core.py      # 213 causal base features (fit/apply, frozen artifacts)
   genalpha/             # the 50 curated factors, regenerated from raw
@@ -135,7 +168,7 @@ submit/
     core.py             #   Ctx: causal primitive toolkit over any panel
     factors_*.py        #   the factor families
     confpos50.json      #   the 50 factor names (report-canonical order)
-  models.py             # MTMLP + EGTransformer definitions
+  models.py             # MTMLP + EGCSTransformer (v2 temporal+cross-sectional)
   weights/              # frozen: lgb_dart_seed*.txt, mlp_seed*.pt, xfmr_seed*.pt,
                         #         feature_artifacts.json, ensemble_config.json
   requirements.txt

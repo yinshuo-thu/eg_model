@@ -121,8 +121,23 @@ python ML_ensemble/scripts/run_ensemble.py     # robust equal-weight blend
 python tools/gen_figs.py                        # figures
 ```
 
-`predict(df) -> y_hat` on new rows (same schema, `y` withheld): recompute features
-→ score each model → per-day z-score → equal-weight blend.
+### Deployable OOS package — `submit/`
+
+`submit/` is the self-contained, causal, **all-data-trained** package for scoring
+a held-out OOS period (see `submit/README.md`). It regenerates the full **263
+features** from raw via `genalpha` (213 base + 50 curated factors, all leak-free
+and OOS-portable — no precomputed parquet needed), then runs the ensemble of
+**LightGBM + multi-task MLP + a v2 temporal + cross-sectional Transformer**
+(R-Drop + scale-up + stochastic depth), retrained on **all labelled days
+(1–1259)**.
+
+```bash
+./submit/run_predict.sh oos.parquet preds.parquet          # ensemble (default); auto GPU->CPU
+python submit/predict.py --input oos.csv --output preds.csv --model transformer --device cpu
+```
+`predict(df) -> [day, instrument_id, y_hat]`, `y` withheld — recompute 263
+features → score each family → per-day z-score → diversity-weight blend →
+group-neutralise. No GPU required (auto CPU fallback); progress is printed.
 
 ---
 

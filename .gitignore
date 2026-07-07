@@ -35,3 +35,4 @@ index.html.bak_*
 # NOTE: kept in git — all code (scripts/tools), configs, metrics CSVs,
 # artifacts/notes, feature_list.json, summary_src.html, summary.html,
 # summary_assets/ (report figures), report/, README.
+Transformer/*/preds/

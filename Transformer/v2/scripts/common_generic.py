@@ -1,0 +1,67 @@
+"""Generic retrain-stack utilities, parametrized by env vars so the SAME
+scripts serve every mining round instead of hand-copying a new common_vN.py +
+run_*_vN.py set each time.
+
+Env vars (all optional, sensible defaults point at the alpha_v4 round):
+  RETRAIN_TAG       -- suffix used in model/pred names, e.g. "v4" -> "lightgbm_l1_v4"
+  RETRAIN_FEATURES  -- path to the merged features parquet
+  RETRAIN_FEATURE_LIST -- path to the JSON list of feature columns to use
+"""
+from __future__ import annotations
+import os, json
+from pathlib import Path
+import pandas as pd
+
+ROOT = Path("/root/autodl-tmp/eg_model")
+TAG = os.environ.get("RETRAIN_TAG", "v4")
+FEAT = Path(os.environ.get("RETRAIN_FEATURES", str(ROOT / "artifacts" / "features_v4.parquet")))
+FEATURE_LIST = Path(os.environ.get("RETRAIN_FEATURE_LIST", str(ROOT / "artifacts" / "feature_list_v4.json")))
+PREDS = ROOT / "artifacts" / "preds"
+PREDS.mkdir(parents=True, exist_ok=True)
+METR = ROOT / "artifacts" / "metrics"
+METR.mkdir(parents=True, exist_ok=True)
+
+
+def feature_cols() -> list[str]:
+    return json.loads(FEATURE_LIST.read_text())
+
+
+def load(cols: list[str] | None = None) -> pd.DataFrame:
+    base = ["day", "instrument_id", "g", "split", "y", "y_xs"]
+    fcols = cols if cols is not None else feature_cols()
+    return pd.read_parquet(FEAT, columns=base + fcols)
+
+
+def daily_ic(df: pd.DataFrame, pred="pred", true="y", method="pearson") -> tuple[float, float, float]:
+    ic = df.dropna(subset=[pred, true]).groupby("day").apply(
+        lambda s: s[pred].corr(s[true], method=method))
+    ic = ic.dropna()
+    m, s = float(ic.mean()), float(ic.std())
+    return m, s, (m / s if s > 0 else float("nan"))
+
+
+def evaluate(df: pd.DataFrame, name: str, pred="pred") -> dict:
+    out = {"model": name}
+    for split in ("valid", "test"):
+        sub = df[df["split"] == split]
+        m, s, ir = daily_ic(sub, pred=pred)
+        sm, _, _ = daily_ic(sub, pred=pred, method="spearman")
+        pos = float((sub.dropna(subset=[pred, "y"]).groupby("day")
+                     .apply(lambda g: g[pred].corr(g["y"])) > 0).mean())
+        out[f"{split}_IC"] = round(m, 5)
+        out[f"{split}_IR"] = round(ir, 3)
+        out[f"{split}_spear"] = round(sm, 5)
+        out[f"{split}_pos"] = round(pos, 3)
+    return out
+
+
+def save_pred(df: pd.DataFrame, name: str, pred="pred") -> None:
+    keep = df[df["split"].isin(["valid", "test"])][["day", "instrument_id", "split", "y", pred]].copy()
+    keep = keep.rename(columns={pred: "pred"})
+    keep.to_parquet(PREDS / f"{name}.parquet", index=False)
+
+
+def print_row(d: dict) -> None:
+    print(f"  {d['model']:24s} valid IC {d['valid_IC']:.5f} IR {d['valid_IR']:.2f} | "
+          f"test IC {d['test_IC']:.5f} IR {d['test_IR']:.2f} spear {d['test_spear']:.5f} pos {d['test_pos']:.2f}",
+          flush=True)
